@@ -1,179 +1,216 @@
 import { Game } from './models/Game';
+import { AIController } from './algorithms/AIController';
 import { Renderer } from './renderer';
-import { createAIController, AIControllerBase } from './algorithms/AIControllerFactory';
-import { logGameEnd } from './algorithms/AIController';
-import { GameMode, GameStatus, Direction } from './types';
 
-// DOM elements
+const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+const renderer = new Renderer(canvas);
+
 const mapSizeInput = document.getElementById('map-size') as HTMLInputElement;
-const mapSizeDisplay = document.getElementById('map-size-display') as HTMLSpanElement;
+const mapSizeDisplay = document.getElementById('map-size-display')!;
 const speedInput = document.getElementById('speed') as HTMLInputElement;
-const speedDisplay = document.getElementById('speed-display') as HTMLSpanElement;
-const humanModeBtn = document.getElementById('human-mode') as HTMLButtonElement;
-const aiModeBtn = document.getElementById('ai-mode') as HTMLButtonElement;
+const speedDisplay = document.getElementById('speed-display')!;
 const startBtn = document.getElementById('start-btn') as HTMLButtonElement;
 const pauseBtn = document.getElementById('pause-btn') as HTMLButtonElement;
 const resetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
-const gameStatusEl = document.getElementById('game-status') as HTMLSpanElement;
-const scoreEl = document.getElementById('score') as HTMLSpanElement;
-const stepsEl = document.getElementById('steps') as HTMLSpanElement;
-const aiStatusEl = document.getElementById('ai-status') as HTMLSpanElement;
+const humanModeBtn = document.getElementById('human-mode') as HTMLButtonElement;
+const aiModeBtn = document.getElementById('ai-mode') as HTMLButtonElement;
+const gameStatusEl = document.getElementById('game-status')!;
+const scoreEl = document.getElementById('score')!;
+const stepsEl = document.getElementById('steps')!;
+const aiStatusEl = document.getElementById('ai-status')!;
 
 let game: Game;
-let renderer: Renderer;
-let aiController: AIControllerBase;
+let aiController: AIController | null = null;
+let isAI = true;
+let isPaused = false;
+let gameRunning = false;
 
-function initGame(): void {
-  const mapSize = parseInt(mapSizeInput.value) || 10;
-  const speed = parseInt(speedInput.value) || 10;
-
-  game = new Game({
-    mapWidth: mapSize,
-    mapHeight: mapSize,
-    speed: speed,
-    mode: aiModeBtn.classList.contains('active') ? GameMode.AI : GameMode.HUMAN
-  });
-  renderer = new Renderer('game-canvas');
-  renderer.updateMapSize(mapSize, mapSize);
-  aiController = createAIController(mapSize, mapSize, Direction.RIGHT);
-
-  game.setCallbacks({
-    onStatusChange: (status: GameStatus) => {
-      gameStatusEl.textContent = getStatusText(status);
-      // Log game end
-      if (status === GameStatus.GAME_OVER || status === GameStatus.VICTORY) {
-        const stats = game.getStats();
-        const reason = status === GameStatus.VICTORY ? '满分胜利!' : '死亡';
-        logGameEnd(stats.score, stats.steps, reason);
-      }
-      updateUI();
-    },
-    onStatsUpdate: (stats) => { scoreEl.textContent = stats.score.toString(); stepsEl.textContent = stats.steps.toString(); },
-    onRender: () => renderGame(),
-    onAIDecision: (decision) => { aiStatusEl.textContent = decision; },
-    onBeforeUpdate: () => {
-      // AI决策现在在每次游戏更新之前同步调用
-      // 不再需要独立的AI循环
-      if (game.getConfig().mode === GameMode.AI && game.getStatus() === GameStatus.PLAYING) {
-        const stats = game.getStats();
-        const snakeBody = game.getSnakeBody();
-        const head = game.getSnakeHead();
-        const food = game.getFoodPosition();
-        
-        // 打印坐标到控制台
-        console.log(`[Step ${stats.steps}] Head=(${head.x},${head.y}) Food=(${food.x},${food.y}) BodyLen=${snakeBody.length}`);
-        
-        // 死循环检测: 如果500步没吃到食物,强制结束游戏
-        if (aiController.checkDeadLoop(stats.score, stats.steps, snakeBody)) {
-          game.gameOver('AI死循环');
-          return;
-        }
-        
-        const decision = aiController.getDecision(
-          head,
-          snakeBody,
-          food
-        );
-        game.setAIDirection(decision.direction);
-        aiController.updateDirection(decision.direction);
-        aiStatusEl.textContent = `${decision.strategy} (${Math.round(decision.confidence * 100)}%)`;
-      }
+// URL 参数初始化
+function initFromURL(): void {
+  const params = new URLSearchParams(window.location.search);
+  const size = params.get('size');
+  const algorithm = params.get('algorithm');
+  
+  if (size) {
+    const gridSize = parseInt(size);
+    if (gridSize >= 5 && gridSize <= 30) {
+      mapSizeInput.value = size;
+      mapSizeDisplay.textContent = `${gridSize} x ${gridSize}`;
     }
-  });
-
-  renderGame();
-  updateUI();
-}
-
-function renderGame(): void {
-  const { score, steps } = game.getStats();
-  renderer.render((x, y) => game.getCellType(x, y), score, steps, getStatusText(game.getStatus()));
-
-  const status = game.getStatus();
-  if (status === GameStatus.GAME_OVER || status === GameStatus.VICTORY) {
-    renderer.renderGameOver(game.getStats().score, status === GameStatus.VICTORY);
   }
-}
-
-function getStatusText(status: GameStatus): string {
-  switch (status) {
-    case GameStatus.NOT_STARTED: return '未开始';
-    case GameStatus.PLAYING: return '进行中';
-    case GameStatus.PAUSED: return '已暂停';
-    case GameStatus.GAME_OVER: return '游戏结束';
-    case GameStatus.VICTORY: return '满分!';
-    default: return '未知';
+  
+  if (algorithm === 'api') {
+    isAI = true;
+    humanModeBtn.classList.remove('active');
+    aiModeBtn.classList.add('active');
   }
 }
 
 function updateUI(): void {
-  const status = game.getStatus();
-  const isPlaying = status === GameStatus.PLAYING;
-  const isPaused = status === GameStatus.PAUSED;
-  startBtn.disabled = isPlaying;
-  pauseBtn.disabled = !isPlaying && !isPaused;
-  pauseBtn.textContent = isPaused ? '继续' : '暂停';
-  mapSizeInput.disabled = isPlaying;
-  humanModeBtn.disabled = isPlaying;
-  aiModeBtn.disabled = isPlaying;
+  if (!game) return;
+  const stats = game.getStats();
+  gameStatusEl.textContent = game.isRunning ? (isPaused ? '已暂停' : '进行中') : (game.isOver ? '已结束' : '未开始');
+  scoreEl.textContent = stats.score.toString();
+  stepsEl.textContent = stats.steps.toString();
 }
 
-function handleKeydown(event: KeyboardEvent): void {
-  if (event.code === 'Space') { event.preventDefault(); game.togglePause(); return; }
-  if (game.getConfig().mode === GameMode.HUMAN && game.getStatus() === GameStatus.PLAYING) {
-    let direction: Direction | null = null;
-    switch (event.code) {
-      case 'ArrowUp': case 'KeyW': direction = Direction.UP; break;
-      case 'ArrowDown': case 'KeyS': direction = Direction.DOWN; break;
-      case 'ArrowLeft': case 'KeyA': direction = Direction.LEFT; break;
-      case 'ArrowRight': case 'KeyD': direction = Direction.RIGHT; break;
-    }
-    if (direction !== null) { event.preventDefault(); game.setSnakeDirection(direction); }
+async function startGame(): Promise<void> {
+  const gridSize = parseInt(mapSizeInput.value);
+  const speed = parseInt(speedInput.value);
+  
+  // Set canvas size based on grid
+  const maxCanvasSize = Math.min(window.innerWidth - 40, 600);
+  canvas.width = maxCanvasSize;
+  canvas.height = maxCanvasSize;
+  renderer.setCellSize(maxCanvasSize / gridSize);
+  
+  game = new Game(canvas, gridSize, gridSize);
+  
+  if (isAI) {
+    aiController = new AIController(gridSize, gridSize);
+  }
+  
+  game.start();
+  gameRunning = true;
+  updateUI();
+  renderer.render(game);
+  
+  if (isAI) {
+    await gameLoopAI();
+  } else {
+    gameLoopHuman();
   }
 }
 
+// AI模式：严格等待API返回后再下一步
+async function gameLoopAI(): Promise<void> {
+  if (!gameRunning || !game || isPaused) return;
+  
+  if (!game.isRunning || game.isOver) {
+    gameRunning = false;
+    gameStatusEl.textContent = `结束! 得分: ${game.getStats().score}`;
+    renderer.render(game);
+    return;
+  }
+  
+  if (aiController) {
+    const direction = await aiController.getNextDirection(
+      game.getSnake(),
+      game.getFood(),
+      game.getObstacles()
+    );
+    game.setDirection(direction);
+    aiStatusEl.textContent = `${direction.x},${direction.y}`;
+  }
+  
+  game.update();
+  updateUI();
+  renderer.render(game);
+  
+  if (gameRunning && !game.isOver) {
+    const speed = parseInt(speedInput.value);
+    const delay = Math.max(50, 500 - speed * 45);
+    await new Promise(r => setTimeout(r, delay));
+    await gameLoopAI();
+  }
+}
+
+// 人类模式
+let humanInterval: number | null = null;
+function gameLoopHuman(): void {
+  if (!gameRunning || isPaused || !game || game.isOver) return;
+  
+  game.update();
+  updateUI();
+  renderer.render(game);
+  
+  if (!game.isOver && gameRunning) {
+    const speed = parseInt(speedInput.value);
+    const delay = Math.max(50, 500 - speed * 45);
+    humanInterval = window.setTimeout(gameLoopHuman, delay);
+  } else {
+    gameRunning = false;
+    gameStatusEl.textContent = `结束! 得分: ${game.getStats().score}`;
+  }
+}
+
+function togglePause(): void {
+  isPaused = !isPaused;
+  pauseBtn.textContent = isPaused ? '继续' : '暂停';
+  if (!isPaused && gameRunning) {
+    if (isAI) {
+      gameLoopAI();
+    } else {
+      gameLoopHuman();
+    }
+  }
+}
+
+function resetGame(): void {
+  gameRunning = false;
+  if (humanInterval) {
+    clearTimeout(humanInterval);
+    humanInterval = null;
+  }
+  gameStatusEl.textContent = '未开始';
+  scoreEl.textContent = '0';
+  stepsEl.textContent = '0';
+  aiStatusEl.textContent = '-';
+  isPaused = false;
+  pauseBtn.textContent = '暂停';
+  pauseBtn.disabled = true;
+  startBtn.disabled = false;
+}
+
+// 事件监听
 mapSizeInput.addEventListener('input', () => {
-  const size = Math.max(10, Math.min(20, parseInt(mapSizeInput.value) || 10));
-  mapSizeInput.value = size.toString();
+  const size = parseInt(mapSizeInput.value);
   mapSizeDisplay.textContent = `${size} x ${size}`;
-  initGame();
 });
 
 speedInput.addEventListener('input', () => {
-  const speed = Math.max(1, Math.min(10, parseInt(speedInput.value) || 5));
-  speedInput.value = speed.toString();
-  speedDisplay.textContent = speed.toString();
-  game.setSpeed(speed);
+  speedDisplay.textContent = speedInput.value;
 });
 
+startBtn.addEventListener('click', async () => {
+  startBtn.disabled = true;
+  pauseBtn.disabled = false;
+  await startGame();
+});
+
+pauseBtn.addEventListener('click', togglePause);
+resetBtn.addEventListener('click', resetGame);
+
 humanModeBtn.addEventListener('click', () => {
-  if (game.getStatus() !== GameStatus.PLAYING) {
-    humanModeBtn.classList.add('active');
-    aiModeBtn.classList.remove('active');
-    game.setMode(GameMode.HUMAN);
-    aiStatusEl.textContent = '-';
-    // 重置AI控制器方向
-    aiController = createAIController(game.getMapSize().width, game.getMapSize().height, Direction.RIGHT);
-  }
+  isAI = false;
+  humanModeBtn.classList.add('active');
+  aiModeBtn.classList.remove('active');
+  resetGame();
 });
 
 aiModeBtn.addEventListener('click', () => {
-  if (game.getStatus() !== GameStatus.PLAYING) {
-    aiModeBtn.classList.add('active');
-    humanModeBtn.classList.remove('active');
-    game.setMode(GameMode.AI);
-    aiStatusEl.textContent = '就绪';
-    // 重置AI控制器方向
-    aiController = createAIController(game.getMapSize().width, game.getMapSize().height, Direction.RIGHT);
+  isAI = true;
+  aiModeBtn.classList.add('active');
+  humanModeBtn.classList.remove('active');
+  resetGame();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (!game || isAI) return;
+  
+  const keyMap: Record<string, [number, number]> = {
+    'ArrowUp': [0, -1], 'ArrowDown': [0, 1],
+    'ArrowLeft': [-1, 0], 'ArrowRight': [1, 0]
+  };
+  
+  if (keyMap[e.key]) {
+    const [dx, dy] = keyMap[e.key];
+    game.setDirection({ x: dx, y: dy });
+  }
+  if (e.code === 'Space') {
+    e.preventDefault();
+    togglePause();
   }
 });
 
-startBtn.addEventListener('click', () => game.start());
-pauseBtn.addEventListener('click', () => game.togglePause());
-resetBtn.addEventListener('click', () => { aiController.reset(); game.reset(); aiStatusEl.textContent = '-'; });
-document.addEventListener('keydown', handleKeydown);
-
-document.addEventListener('DOMContentLoaded', initGame);
-if (document.readyState === 'complete' || document.readyState === 'interactive') initGame();
-
-console.log('贪吃蛇游戏已启动!');
+initFromURL();
