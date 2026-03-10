@@ -1,0 +1,16 @@
+{
+  "game_id": "42438428-5dc5-4eea-b36f-31ddb10bafb1",
+  "size": 6,
+  "start_time": "2026-03-09T01:58:36.299610",
+  "score": 33,
+  "steps": 257,
+  "food_eaten": 33,
+  "death_reason": "满分胜利!",
+  "death_position": {
+    "x": 3,
+    "y": 5
+  },
+  "moves": [],
+  "last_direction": "RIGHT",
+  "end_time": "2026-03-09T01:58:49.559853"
+}

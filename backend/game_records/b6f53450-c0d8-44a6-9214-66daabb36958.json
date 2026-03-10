@@ -1,0 +1,15 @@
+{
+  "game_id": "b6f53450-c0d8-44a6-9214-66daabb36958",
+  "size": 10,
+  "start_time": "2026-03-07T12:09:14.306450",
+  "score": 10,
+  "steps": 100,
+  "food_eaten": 10,
+  "death_reason": "测试完成",
+  "death_position": {
+    "x": 5,
+    "y": 5
+  },
+  "moves": [],
+  "end_time": "2026-03-07T12:09:14.327395"
+}

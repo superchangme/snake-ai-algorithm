@@ -1,0 +1,308 @@
+"""
+Phase 4 Hamilton Snake AI - 高性能动态Hamilton路径算法
+目标：8x8网格达到40+长度（满分64）
+
+核心思路：
+1. 预计算一条Hamilton回路覆盖整个网格
+2. 蛇短时走捷径（跳过Hamilton路径中的段）加速吃食物
+3. 蛇长时严格沿Hamilton回路走（保证安全）
+4. 关键约束：捷径不能跳过食物的Hamilton位置
+"""
+
+from collections import deque
+
+UP = (0, -1)
+DOWN = (0, 1)
+LEFT = (-1, 0)
+RIGHT = (1, 0)
+DIRS = [UP, DOWN, LEFT, RIGHT]
+
+
+def build_hamiltonian_cycle(width, height):
+    """
+    为偶数宽高网格生成Hamilton回路（蛇形扫描法）。
+    返回 cycle_order[y][x] 和 cycle_path 列表。
+    """
+    assert width % 2 == 0 and height % 2 == 0
+    path = []
+    for x in range(width):
+        if x == 0:
+            for y in range(height):
+                path.append((x, y))
+        elif x % 2 == 1:
+            for y in range(height - 1, 0, -1):
+                path.append((x, y))
+        else:
+            for y in range(1, height):
+                path.append((x, y))
+    for x in range(width - 1, 0, -1):
+        path.append((x, 0))
+
+    assert len(path) == width * height
+    order = [[0] * width for _ in range(height)]
+    for i, (x, y) in enumerate(path):
+        order[y][x] = i
+    return order, path
+
+
+class HamiltonSnakeAI:
+    def __init__(self, width=8, height=8):
+        self.width = width
+        self.height = height
+        self.total = width * height
+        self.order, self.path = build_hamiltonian_cycle(width, height)
+
+    def _is_safe(self, head, direction, snake_set):
+        """检查从head沿direction走一步是否安全（不出界、不撞自身）"""
+        nx, ny = head[0] + direction[0], head[1] + direction[1]
+        if not (0 <= nx < self.width and 0 <= ny < self.height):
+            return False
+        if (nx, ny) in snake_set:
+            return False
+        return True
+
+    def _safe_fallback(self, head, snake_set):
+        """在所有方向中找一个安全方向，找不到则返回None"""
+        for d in DIRS:
+            if self._is_safe(head, d, snake_set):
+                return d
+        return None
+
+    def get_direction(self, snake, food, grid=None):
+        head = snake[0]
+        snake_set = set(snake)
+        snake_len = len(snake)
+        fill = snake_len / self.total
+
+        # 默认：Hamilton回路的下一步
+        ham_next = self._next_in_cycle(head)
+        default_dir = self._dir(head, ham_next)
+
+        # 高填充率：严格Hamilton（但仍需验证安全性）
+        if fill > 0.5:
+            if self._is_safe(head, default_dir, snake_set):
+                return default_dir
+            fallback = self._safe_fallback(head, snake_set)
+            if fallback is not None:
+                return fallback
+            # No safe move at high fill - try last resort
+            for d in DIRS:
+                nx, ny = head[0] + d[0], head[1] + d[1]
+                if 0 <= nx < self.width and 0 <= ny < self.height and (nx, ny) not in snake_set:
+                    return d
+            return default_dir
+
+        # 尝试走捷径
+        best = self._best_shortcut(head, food, snake, snake_set, fill)
+        if best:
+            return self._dir(head, best)
+
+        # 默认方向安全则走，否则找安全方向
+        if self._is_safe(head, default_dir, snake_set):
+            return default_dir
+        fallback = self._safe_fallback(head, snake_set)
+        if fallback is not None:
+            return fallback
+        # Last resort: find any valid move (should be rare)
+        for d in DIRS:
+            nx, ny = head[0] + d[0], head[1] + d[1]
+            if 0 <= nx < self.width and 0 <= ny < self.height and (nx, ny) not in snake_set:
+                return d
+        # TRULY STUCK - all 4 directions blocked!
+        # This happens when snake forms a closed loop. Signal game over by returning None
+        # The game simulator will handle this case
+        return None
+
+    def _next_in_cycle(self, pos):
+        idx = self.order[pos[1]][pos[0]]
+        return self.path[(idx + 1) % self.total]
+
+    def _dir(self, a, b):
+        return (b[0] - a[0], b[1] - a[1])
+
+    def _cycle_dist(self, a, b):
+        """从a到b沿Hamilton正方向的距离"""
+        ai = self.order[a[1]][a[0]]
+        bi = self.order[b[1]][b[0]]
+        return (bi - ai) % self.total
+
+    def _best_shortcut(self, head, food, snake, snake_set, fill):
+        """
+        在所有可走的相邻格中，选择最优的捷径。
+        
+        规则：
+        1. 必须沿Hamilton正方向前进
+        2. 不能跳过食物的Hamilton位置
+        3. 不能跳过蛇身的Hamilton位置
+        4. 跳跃距离受填充率限制
+        """
+        head_idx = self.order[head[1]][head[0]]
+        food_idx = self.order[food[1]][food[0]]
+        food_dist = (food_idx - head_idx) % self.total  # 沿Hamilton到食物的距离
+
+        neighbors = []
+        for d in DIRS:
+            nx, ny = head[0] + d[0], head[1] + d[1]
+            if not (0 <= nx < self.width and 0 <= ny < self.height):
+                continue
+            if (nx, ny) in snake_set:
+                continue
+            neighbors.append((nx, ny))
+
+        if not neighbors:
+            return None
+
+        # 最大允许跳跃 - 更保守以避免被困
+        if fill < 0.25:
+            max_skip = self.total // 2
+        elif fill < 0.4:
+            max_skip = self.total // 4
+        elif False:
+            max_skip = self.total // 3
+        else:
+            max_skip = self.total // 6
+
+        best_pos = None
+        best_food_dist = food_dist  # 当前到食物的Hamilton距离
+        best_geo_dist = float('inf')  # 当前到食物的几何距离
+        best_geo_reduction = -float('inf')  # 几何距离的最大减少量
+
+        for nb in neighbors:
+            nb_idx = self.order[nb[1]][nb[0]]
+            skip = (nb_idx - head_idx) % self.total
+
+            if skip == 0 or skip > max_skip:
+                continue
+
+            # 关键：不能跳过食物！
+            # 如果食物在 head_idx 和 nb_idx 之间（Hamilton正方向），则跳过了食物
+            if skip > food_dist and food_dist > 0:
+                continue
+
+            # 不能跳过蛇身
+            safe = True
+            for i, seg in enumerate(snake):
+                if i == 0:
+                    continue
+                seg_idx = self.order[seg[1]][seg[0]]
+                seg_skip = (seg_idx - head_idx) % self.total
+                if 0 < seg_skip < skip:
+                    safe = False
+                    break
+            if not safe:
+                continue
+
+            # 走到nb后，确保还有出路
+            future_set = set(snake[:-1])
+            future_set.add(nb)
+            has_exit = any(
+                0 <= nb[0]+d[0] < self.width and 0 <= nb[1]+d[1] < self.height
+                and (nb[0]+d[0], nb[1]+d[1]) not in future_set
+                for d in DIRS
+            )
+            if not has_exit:
+                continue
+
+            # 计算走到nb后，到食物的新Hamilton距离
+            new_food_dist = (food_idx - nb_idx) % self.total
+            # 计算到食物的几何距离（Manhattan距离）
+            new_geo_dist = abs(nb[0] - food[0]) + abs(nb[1] - food[1])
+            
+            # 综合评分：优先几何距离减少量（更直接地朝食物前进），其次Hamilton距离
+            # 计算几何距离的减少量（当前到食物距离 - 移动后到食物距离）
+            current_geo_dist = abs(head[0] - food[0]) + abs(head[1] - food[1])
+            geo_reduction = current_geo_dist - new_geo_dist
+            
+            if geo_reduction > best_geo_reduction:
+                best_geo_reduction = geo_reduction
+                best_food_dist = new_food_dist
+                best_geo_dist = new_geo_dist
+                best_pos = nb
+            elif geo_reduction == best_geo_reduction and new_food_dist < best_food_dist:
+                best_food_dist = new_food_dist
+                best_geo_dist = new_geo_dist
+                best_pos = nb
+
+        return best_pos
+
+
+# ============================================================
+# 模拟器
+# ============================================================
+def simulate_game(width=8, height=8, max_steps=50000, verbose=False):
+    import random
+    ai = HamiltonSnakeAI(width, height)
+    mid = width // 2
+    snake = [(mid, mid), (mid - 1, mid), (mid - 2, mid)]
+
+    def place_food():
+        ss = set(snake)
+        empty = [(x, y) for x in range(width) for y in range(height) if (x, y) not in ss]
+        return random.choice(empty) if empty else None
+
+    food = place_food()
+    if not food:
+        return len(snake)
+
+    steps = 0
+    no_food = 0
+    limit = width * height * 8
+
+    while steps < max_steps:
+        d = ai.get_direction(snake, food)
+        # Handle case where AI returns None (completely trapped)
+        if d is None:
+            if verbose:
+                print(f"AI returned None (trapped) at step {steps}, len={len(snake)}")
+            break
+        nh = (snake[0][0] + d[0], snake[0][1] + d[1])
+
+        if not (0 <= nh[0] < width and 0 <= nh[1] < height):
+            if verbose: print(f"Wall at step {steps}, len={len(snake)}")
+            break
+        if nh in set(snake[:-1]):
+            if verbose: print(f"Self-hit at step {steps}, len={len(snake)}")
+            break
+
+        snake.insert(0, nh)
+        if nh == food:
+            no_food = 0
+            food = place_food()
+            if not food:
+                if verbose: print(f"PERFECT at step {steps}, len={len(snake)}")
+                break
+        else:
+            snake.pop()
+            no_food += 1
+
+        if no_food > limit:
+            if verbose: print(f"Timeout at step {steps}, len={len(snake)}")
+            break
+        steps += 1
+
+    return len(snake)
+
+
+def run_benchmark(n=30, w=8, h=8):
+    import random
+    results = []
+    for i in range(n):
+        random.seed(i * 42 + 7)
+        s = simulate_game(w, h)
+        results.append(s)
+        tag = '★满分' if s == w * h else f'{s * 100 // (w * h)}%'
+        print(f"Game {i + 1:2d}: {s:2d}/{w * h}  ({tag})")
+
+    avg = sum(results) / len(results)
+    print(f"\n{'=' * 40}")
+    print(f"平均: {avg:.1f} | 最好: {max(results)} | 最差: {min(results)}")
+    print(f"满分: {sum(1 for r in results if r == w * h)}/{n}")
+    print(f">=40: {sum(1 for r in results if r >= 40)}/{n}")
+    print(f">=30: {sum(1 for r in results if r >= 30)}/{n}")
+    return results
+
+
+if __name__ == "__main__":
+    print("Phase 4 Hamilton Snake AI - Benchmark")
+    print("=" * 40)
+    run_benchmark(30, 8, 8)
