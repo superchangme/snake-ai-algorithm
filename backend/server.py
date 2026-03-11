@@ -16,7 +16,7 @@ from urllib.parse import urlparse, parse_qs
 PORT = int(os.environ.get("PORT", 8080))
 
 # 前端静态文件目录
-DIST_DIR = os.path.join(os.path.dirname(__file__), "dist")
+DIST_DIR = os.path.join(os.path.dirname(__file__), "..", "dist")
 
 print(f"[DEBUG] PORT: {PORT}")
 print(f"[DEBUG] DIST_DIR: {DIST_DIR}")
