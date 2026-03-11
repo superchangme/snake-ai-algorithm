@@ -16,7 +16,7 @@ from urllib.parse import urlparse, parse_qs
 PORT = int(os.environ.get("PORT", 8080))
 
 # 前端静态文件目录
-DIST_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+DIST_DIR = os.path.join(os.path.dirname(__file__), "frontend", "dist")
 
 sys.path.insert(0, os.path.dirname(__file__))
 from phase17_tweak import TweakAI
