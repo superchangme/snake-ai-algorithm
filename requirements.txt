@@ -1,0 +1,2 @@
+# Python dependencies for Snake AI
+# No external dependencies needed - uses only standard library
