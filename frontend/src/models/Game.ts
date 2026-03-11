@@ -15,6 +15,7 @@ export class Game {
   
   isRunning: boolean = false;
   isOver: boolean = false;
+  isWon: boolean = false;
   
   private score: number = 0;
   private steps: number = 0;
@@ -35,21 +36,50 @@ export class Game {
     this.placeFood();
   }
   
+  // 检查下一个位置是否是食物
+  private willEatFood(nextX: number, nextY: number): boolean {
+    return nextX === this.food.position.x && nextY === this.food.position.y;
+  }
+  
   private placeFood(): void {
+    // 先检查是否已满分（蛇身占满所有格子）
+    if (this.snake.body.length >= this.width * this.height) {
+      this.isWon = true;
+      this.isOver = true;
+      this.isRunning = false;
+      return;
+    }
+    
     let x: number, y: number;
-    do {
+    let attempts = 0;
+    const maxAttempts = this.width * this.height;
+    
+    while (attempts < maxAttempts) {
       x = Math.floor(Math.random() * this.width);
       y = Math.floor(Math.random() * this.height);
-    } while (
-      this.snake.contains({ x, y }) ||
-      Array.from(this.obstacles).some(o => o === `${x},${y}`)
-    );
-    this.food.setPosition(x, y);
+      
+      if (!this.snake.contains({ x, y }) && 
+          !Array.from(this.obstacles).some(o => o === `${x},${y}`)) {
+        this.food.setPosition(x, y);
+        return;
+      }
+      attempts++;
+    }
+    
+    // 没找到空位，判定为满分
+    this.isWon = true;
+    this.isOver = true;
+    this.isRunning = false;
+  }
+  
+  private getMaxScore(): number {
+    return this.width * this.height - 3;
   }
   
   start(): void {
     this.isRunning = true;
     this.isOver = false;
+    this.isWon = false;
     this.score = 0;
     this.steps = 0;
   }
@@ -57,32 +87,50 @@ export class Game {
   update(): void {
     if (!this.isRunning || this.isOver) return;
     
-    this.snake.move();
-    this.steps++;
-    
+    // 获取下一步位置
     const head = this.snake.getHead();
+    const dir = this.snake.nextDirection;
+    const nextX = head.x + dir.x;
+    const nextY = head.y + dir.y;
     
-    // Check wall collision
-    if (head.x < 0 || head.x >= this.width || head.y < 0 || head.y >= this.height) {
+    // 先检查是否撞墙
+    if (nextX < 0 || nextX >= this.width || nextY < 0 || nextY >= this.height) {
       this.isOver = true;
       this.isRunning = false;
       return;
     }
     
-    // Check self collision
-    const bodyWithoutHead = this.snake.body.slice(1);
-    if (bodyWithoutHead.some(seg => seg.x === head.x && seg.y === head.y)) {
+    // 检查是否撞自己
+    const bodyWithoutTail = this.snake.body.slice(0, -1); // 不包括尾巴
+    if (bodyWithoutTail.some(seg => seg.x === nextX && seg.y === nextY)) {
       this.isOver = true;
       this.isRunning = false;
       return;
     }
     
-    // Check food
-    if (head.x === this.food.position.x && head.y === this.food.position.y) {
+    // 检查下一步是否是食物
+    const ateFood = this.willEatFood(nextX, nextY);
+    
+    if (ateFood) {
       this.snake.grow();
       this.score++;
+      
+      // 检查是否满分 - 考虑 growPending，蛇移动后会变长
+      const effectiveLength = this.snake.body.length + this.snake.growPending;
+      if (effectiveLength >= this.width * this.height) {
+        this.isWon = true;
+        this.isOver = true;
+        this.isRunning = false;
+        return;
+      }
+
+      // 放置新食物
       this.placeFood();
     }
+    
+    // 最后才移动蛇
+    this.snake.move();
+    this.steps++;
   }
   
   setDirection(dir: Direction): void {
@@ -102,7 +150,7 @@ export class Game {
   }
   
   getStats(): GameStats {
-    const maxScore = this.width * this.height - this.snake.body.length;
+    const maxScore = this.getMaxScore();
     return {
       score: this.score,
       steps: this.steps,
