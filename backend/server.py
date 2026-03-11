@@ -16,7 +16,7 @@ from urllib.parse import urlparse, parse_qs
 PORT = int(os.environ.get("PORT", 8080))
 
 # 前端静态文件目录
-DIST_DIR = os.path.join(os.path.dirname(__file__), "dist")
+DIST_DIR = os.path.join(os.path.dirname(__file__), "..", "dist")
 
 sys.path.insert(0, os.path.dirname(__file__))
 from phase17_tweak import TweakAI
@@ -62,14 +62,13 @@ class SnakeAIHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
         
-        # API 路由
-        if path == "/" or path == "/api":
+        # API 路由（只匹配 /api 开头）
+        if path == "/api":
             self._send_json({"status": "ok", "algorithm": "phase17-tweak"})
             return
         
         # 静态文件服务
         if path.startswith("/assets/"):
-            # 静态资源
             filepath = os.path.join(DIST_DIR, path.lstrip("/"))
             ext = os.path.splitext(filepath)[1]
             content_type = {
@@ -82,7 +81,7 @@ class SnakeAIHandler(BaseHTTPRequestHandler):
             self._send_file(filepath, content_type)
             return
         
-        # 其他路径返回 index.html (SPA 路由)
+        # 根路径和其他路径返回 index.html (SPA)
         filepath = os.path.join(DIST_DIR, "index.html")
         self._send_file(filepath, "text/html")
 
@@ -201,10 +200,6 @@ class SnakeAIHandler(BaseHTTPRequestHandler):
 def main():
     print(f"🚀 Snake AI Server - 端口 {PORT}")
     print(f"📁 静态文件目录: {DIST_DIR}")
-    
-    # 检查 dist 目录
-    if not os.path.exists(DIST_DIR):
-        print("⚠️ 警告: dist 目录不存在!")
     
     server = ThreadedHTTPServer(("0.0.0.0", PORT), SnakeAIHandler)
     try:
