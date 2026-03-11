@@ -160,6 +160,10 @@ class TweakAI:
             return candidates[0][1]
         return None
     
+    def reset_game(self, snake):
+        """重置游戏状态"""
+        pass  # TweakAI 是无状态的，不需要重置
+    
     def get_direction(self, snake, food, grid=None):
         head = snake[0]
         body_without_tail = set(snake[:-1])
