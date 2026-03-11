@@ -16,7 +16,13 @@ from urllib.parse import urlparse, parse_qs
 PORT = int(os.environ.get("PORT", 8080))
 
 # 前端静态文件目录
-DIST_DIR = os.path.join(os.path.dirname(__file__), "frontend", "dist")
+DIST_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+
+print(f"[DEBUG] PORT: {PORT}")
+print(f"[DEBUG] DIST_DIR: {DIST_DIR}")
+print(f"[DEBUG] DIST_DIR exists: {os.path.exists(DIST_DIR)}")
+if os.path.exists(DIST_DIR):
+    print(f"[DEBUG] DIST_DIR files: {os.listdir(DIST_DIR)}")
 
 sys.path.insert(0, os.path.dirname(__file__))
 from phase17_tweak import TweakAI
@@ -51,25 +57,26 @@ class SnakeAIHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(content)))
             self.end_headers()
             self.wfile.write(content)
+            print(f"[DEBUG] Served file: {filepath}")
         except FileNotFoundError:
+            print(f"[DEBUG] File not found: {filepath}")
             self.send_error(404, "File not found")
 
     def do_OPTIONS(self):
         self._send_json({"status": "ok"})
 
     def do_GET(self):
-        # 解析 URL
-        parsed = urlparse(self.path)
-        path = parsed.path
+        print(f"[DEBUG] GET: {self.path}")
         
         # API 路由（只匹配 /api 开头）
-        if path == "/api":
+        if self.path == "/api":
             self._send_json({"status": "ok", "algorithm": "phase17-tweak"})
             return
         
         # 静态文件服务
-        if path.startswith("/assets/"):
-            filepath = os.path.join(DIST_DIR, path.lstrip("/"))
+        if self.path.startswith("/assets/"):
+            filepath = os.path.join(DIST_DIR, self.path.lstrip("/"))
+            print(f"[DEBUG] Serving asset: {filepath}")
             ext = os.path.splitext(filepath)[1]
             content_type = {
                 ".js": "application/javascript",
@@ -83,9 +90,12 @@ class SnakeAIHandler(BaseHTTPRequestHandler):
         
         # 根路径和其他路径返回 index.html (SPA)
         filepath = os.path.join(DIST_DIR, "index.html")
+        print(f"[DEBUG] Serving index: {filepath}")
         self._send_file(filepath, "text/html")
 
     def do_POST(self):
+        print(f"[DEBUG] POST: {self.path}")
+        # ... 保持不变
         try:
             length = int(self.headers.get("Content-Length", 0))
             data = json.loads(self.rfile.read(length).decode())
@@ -199,7 +209,6 @@ class SnakeAIHandler(BaseHTTPRequestHandler):
 
 def main():
     print(f"🚀 Snake AI Server - 端口 {PORT}")
-    print(f"📁 静态文件目录: {DIST_DIR}")
     
     server = ThreadedHTTPServer(("0.0.0.0", PORT), SnakeAIHandler)
     try:
