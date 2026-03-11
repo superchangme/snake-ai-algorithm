@@ -13,6 +13,8 @@ const startBtn = document.getElementById('start-btn') as HTMLButtonElement;
 const pauseBtn = document.getElementById('pause-btn') as HTMLButtonElement;
 const resetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
 const humanModeBtn = document.getElementById('human-mode') as HTMLButtonElement;
+const httpModeBtn = document.getElementById('http-mode') as HTMLButtonElement;
+const wsModeBtn = document.getElementById('ws-mode') as HTMLButtonElement;
 const aiModeBtn = document.getElementById('ai-mode') as HTMLButtonElement;
 const gameStatusEl = document.getElementById('game-status')!;
 const scoreEl = document.getElementById('score')!;
@@ -74,6 +76,9 @@ function initFromURL(): void {
   
   if (algorithm === 'api') {
     isAI = true;
+  if (aiController) {
+    wsModeBtn.classList.contains('active') ? aiController.setMode('ws') : aiController.setMode('http');
+  }
     humanModeBtn.classList.remove('active');
     aiModeBtn.classList.add('active');
   }
@@ -330,8 +335,19 @@ humanModeBtn.addEventListener('click', () => {
   resetGame();
 });
 
+httpModeBtn.addEventListener('click', () => {
+  if (aiController) {
+    aiController.setMode('http');
+  }
+  httpModeBtn.classList.add('active');
+  wsModeBtn.classList.remove('active');
+});
+
 aiModeBtn.addEventListener('click', () => {
   isAI = true;
+  if (aiController) {
+    wsModeBtn.classList.contains('active') ? aiController.setMode('ws') : aiController.setMode('http');
+  }
   aiModeBtn.classList.add('active');
   humanModeBtn.classList.remove('active');
   resetGame();
