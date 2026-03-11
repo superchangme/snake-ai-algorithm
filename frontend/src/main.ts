@@ -341,7 +341,14 @@ httpModeBtn.addEventListener('click', () => {
   }
   httpModeBtn.classList.add('active');
   wsModeBtn.classList.remove('active');
-});
+
+wsModeBtn.addEventListener('click', () => {
+  if (aiController) {
+    aiController.setMode('ws');
+  }
+  wsModeBtn.classList.add('active');
+  httpModeBtn.classList.remove('active');
+});});
 
 aiModeBtn.addEventListener('click', () => {
   isAI = true;
