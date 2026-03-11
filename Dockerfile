@@ -6,13 +6,8 @@ WORKDIR /app
 COPY backend/ ./backend/
 COPY requirements.txt .
 
-# 复制前端构建结果
-COPY frontend/dist ./frontend/dist
-
-# 验证文件是否存在
-RUN echo "=== Dockerfile Debug ===" && \
-    ls -la frontend/dist/ && \
-    echo "======================="
+# 复制前端构建结果 (dist 在根目录)
+COPY dist ./dist
 
 # 暴露端口
 EXPOSE 8080
