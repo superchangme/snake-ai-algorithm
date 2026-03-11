@@ -9,10 +9,11 @@ export class Snake {
   constructor(startX: number, startY: number, length: number = 3) {
     this.body = [];
     for (let i = 0; i < length; i++) {
-      this.body.push({ x: startX, y: startY + i });
+      // Body extends in opposite direction of movement (DOWN = y-1, y-2...)
+      this.body.push({ x: startX, y: startY - i });
     }
-    this.direction = { x: 0, y: -1 };
-    this.nextDirection = { x: 0, y: -1 };
+    this.direction = { x: 0, y: 1 };
+    this.nextDirection = { x: 0, y: 1 };
   }
 
   getHead(): Coordinate {

@@ -39,9 +39,9 @@ export class Renderer {
       this.ctx.stroke();
     }
     
-    // Draw food
+    // Draw food only if game is not won
     const food = game.getFood();
-    this.drawFood(food.getPosition());
+    if (!game.isWon) { this.drawFood(food.getPosition()); }
     
     // Draw snake
     this.drawSnake(game);

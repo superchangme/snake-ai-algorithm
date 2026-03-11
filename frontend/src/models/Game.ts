@@ -7,7 +7,7 @@ export class Game {
   ctx: CanvasRenderingContext2D;
   width: number;
   height: number;
-  cellSize: number = 20;
+  cellSize: number = 30;
   
   snake: Snake;
   food: Food;
@@ -42,34 +42,41 @@ export class Game {
   }
   
   private placeFood(): void {
-    // 先检查是否已满分（蛇身占满所有格子）
-    if (this.snake.body.length >= this.width * this.height) {
+    // 先检查是否已满分（蛇身占满所有格子，考虑 growPending）
+    const effectiveLength = this.snake.body.length + this.snake.growPending;
+    const totalCells = this.width * this.height;
+    
+    if (effectiveLength >= totalCells) {
       this.isWon = true;
       this.isOver = true;
       this.isRunning = false;
       return;
     }
     
-    let x: number, y: number;
-    let attempts = 0;
-    const maxAttempts = this.width * this.height;
+    // 直接遍历找空位，而不是随机
+    const emptyCells: Array<{x: number, y: number}> = [];
     
-    while (attempts < maxAttempts) {
-      x = Math.floor(Math.random() * this.width);
-      y = Math.floor(Math.random() * this.height);
-      
-      if (!this.snake.contains({ x, y }) && 
-          !Array.from(this.obstacles).some(o => o === `${x},${y}`)) {
-        this.food.setPosition(x, y);
-        return;
+    for (let x = 0; x < this.width; x++) {
+      for (let y = 0; y < this.height; y++) {
+        if (!this.snake.contains({ x, y }) && 
+            !Array.from(this.obstacles).some(o => o === `${x},${y}`)) {
+          emptyCells.push({ x, y });
+        }
       }
-      attempts++;
     }
     
-    // 没找到空位，判定为满分
-    this.isWon = true;
-    this.isOver = true;
-    this.isRunning = false;
+    // 如果没有空位，判定满分
+    if (emptyCells.length === 0) {
+      this.isWon = true;
+      this.isOver = true;
+      this.isRunning = false;
+      return;
+    }
+    
+    // 从空位中随机选择一个
+    const randomIndex = Math.floor(Math.random() * emptyCells.length);
+    const { x, y } = emptyCells[randomIndex];
+    this.food.setPosition(x, y);
   }
   
   private getMaxScore(): number {
@@ -101,7 +108,7 @@ export class Game {
     }
     
     // 检查是否撞自己
-    const bodyWithoutTail = this.snake.body.slice(0, -1); // 不包括尾巴
+    const bodyWithoutTail = this.snake.body.slice(0, -1);
     if (bodyWithoutTail.some(seg => seg.x === nextX && seg.y === nextY)) {
       this.isOver = true;
       this.isRunning = false;
@@ -114,23 +121,25 @@ export class Game {
     if (ateFood) {
       this.snake.grow();
       this.score++;
-      
-      // 检查是否满分 - 考虑 growPending，蛇移动后会变长
-      const effectiveLength = this.snake.body.length + this.snake.growPending;
-      if (effectiveLength >= this.width * this.height) {
-        this.isWon = true;
-        this.isOver = true;
-        this.isRunning = false;
-        return;
-      }
-
-      // 放置新食物
-      this.placeFood();
     }
     
-    // 最后才移动蛇
+    // 先移动蛇（即使吃到食物也要移动）
     this.snake.move();
     this.steps++;
+    
+    // 移动后再检查是否满分
+    const effectiveLength = this.snake.body.length + this.snake.growPending;
+    if (effectiveLength >= this.width * this.height) {
+      this.isWon = true;
+      this.isOver = true;
+      this.isRunning = false;
+      return;
+    }
+    
+    // 只有未满分时才放置新食物
+    if (ateFood) {
+      this.placeFood();
+    }
   }
   
   setDirection(dir: Direction): void {

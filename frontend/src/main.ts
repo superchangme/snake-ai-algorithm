@@ -31,7 +31,7 @@ let loopId = 0;
 function initCanvas(): void {
   const gridSize = parseInt(mapSizeInput.value);
   // 增大单元格尺寸
-  const cellSize = Math.max(20, Math.min(30, 600 / gridSize));
+  const cellSize = Math.max(30, Math.min(40, 800 / gridSize));
   const canvasSize = cellSize * gridSize;
   
   canvas.width = canvasSize;
