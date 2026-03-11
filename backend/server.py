@@ -6,11 +6,11 @@ Phase 17 Tweak Snake AI API Server + Static Files + WebSocket
 
 import json
 import os
-import sys
 import uuid
-import asyncio
+import sys
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 
 PORT = int(os.environ.get("PORT", 8080))
 DIST_DIR = os.path.join(os.path.dirname(__file__), "..", "dist")
@@ -118,94 +118,95 @@ class SnakeHTTPHandler(BaseHTTPRequestHandler):
             self._send_json({"direction": dir_name})
 
 
-# WebSocket
-try:
-    import websockets
-    
-    async def ws_handler(websocket):
-        print(f"[WS] Client connected")
-        try:
-            async for message in websocket:
-                try:
-                    data = json.loads(message)
-                    action = data.get("action")
-                    
-                    if action == "init":
-                        size = data.get("size", 8)
-                        head_x = data.get("headX", size // 2)
-                        head_y = data.get("headY", size // 2)
-                        body = data.get("body", [])
+# 简单的 WebSocket 实现（使用线程）
+def ws_server():
+    try:
+        import websockets
+        import asyncio
+        
+        async def ws_handler(websocket):
+            print(f"[WS] Client connected")
+            try:
+                async for message in websocket:
+                    try:
+                        data = json.loads(message)
+                        action = data.get("action")
                         
-                        cache_key = f"ai_{size}"
-                        if cache_key not in ai_cache:
-                            ai_cache[cache_key] = TweakAI(width=size, height=size)
+                        if action == "init":
+                            size = data.get("size", 8)
+                            head_x = data.get("headX", size // 2)
+                            head_y = data.get("headY", size // 2)
+                            body = data.get("body", [])
+                            
+                            cache_key = f"ai_{size}"
+                            if cache_key not in ai_cache:
+                                ai_cache[cache_key] = TweakAI(width=size, height=size)
+                            
+                            ai = ai_cache[cache_key]
+                            snake = [(head_x, head_y)]
+                            for p in body:
+                                if isinstance(p, dict):
+                                    snake.append((p.get("x", 0), p.get("y", 0)))
+                                elif isinstance(p, (list, tuple)) and len(p) >= 2:
+                                    snake.append((p[0], p[1]))
+                            ai.reset_game(snake)
+                            
+                            await websocket.send(json.dumps({"status": "initialized", "game_id": str(uuid.uuid4())}))
                         
-                        ai = ai_cache[cache_key]
-                        snake = [(head_x, head_y)]
-                        for p in body:
-                            if isinstance(p, dict):
-                                snake.append((p.get("x", 0), p.get("y", 0)))
-                            elif isinstance(p, (list, tuple)) and len(p) >= 2:
-                                snake.append((p[0], p[1]))
-                        ai.reset_game(snake)
-                        
-                        await websocket.send(json.dumps({"status": "initialized", "game_id": str(uuid.uuid4())}))
-                    
-                    elif action == "move":
-                        head_x = data.get("headX", 0)
-                        head_y = data.get("headY", 0)
-                        body = data.get("body", [])
-                        food_x = data.get("foodX", 0)
-                        food_y = data.get("foodY", 0)
-                        size = data.get("size", 8)
+                        elif action == "move":
+                            head_x = data.get("headX", 0)
+                            head_y = data.get("headY", 0)
+                            body = data.get("body", [])
+                            food_x = data.get("foodX", 0)
+                            food_y = data.get("foodY", 0)
+                            size = data.get("size", 8)
 
-                        snake = [(head_x, head_y)]
-                        for p in body:
-                            if isinstance(p, dict):
-                                snake.append((p.get("x", 0), p.get("y", 0)))
-                            elif isinstance(p, (list, tuple)) and len(p) >= 2:
-                                snake.append((p[0], p[1]))
+                            snake = [(head_x, head_y)]
+                            for p in body:
+                                if isinstance(p, dict):
+                                    snake.append((p.get("x", 0), p.get("y", 0)))
+                                elif isinstance(p, (list, tuple)) and len(p) >= 2:
+                                    snake.append((p[0], p[1]))
 
-                        cache_key = f"ai_{size}"
-                        if cache_key not in ai_cache:
-                            ai_cache[cache_key] = TweakAI(width=size, height=size)
-                        ai = ai_cache[cache_key]
+                            cache_key = f"ai_{size}"
+                            if cache_key not in ai_cache:
+                                ai_cache[cache_key] = TweakAI(width=size, height=size)
+                            ai = ai_cache[cache_key]
 
-                        direction = ai.get_direction(snake, (food_x, food_y))
-                        dir_map = {(0, -1): "UP", (0, 1): "DOWN", (-1, 0): "LEFT", (1, 0): "RIGHT"}
-                        dir_name = dir_map.get(direction, "RIGHT")
-                        
-                        await websocket.send(json.dumps({"direction": dir_name}))
-                        
-                except Exception as e:
-                    await websocket.send(json.dumps({"error": str(e)}))
-        except:
-            pass
-        print(f"[WS] Client disconnected")
+                            direction = ai.get_direction(snake, (food_x, food_y))
+                            dir_map = {(0, -1): "UP", (0, 1): "DOWN", (-1, 0): "LEFT", (1, 0): "RIGHT"}
+                            dir_name = dir_map.get(direction, "RIGHT")
+                            
+                            await websocket.send(json.dumps({"direction": dir_name}))
+                            
+                    except Exception as e:
+                        print(f"[WS] Error: {e}")
+            except:
+                pass
+            print(f"[WS] Client disconnected")
 
-    async def start_ws():
-        async with websockets.serve(ws_handler, "0.0.0.0", PORT + 1):
-            print(f"WebSocket: ws://0.0.0.0:{PORT + 1}")
-            await asyncio.Future()
+        async def start_ws():
+            async with websockets.serve(ws_handler, "0.0.0.0", PORT + 1):
+                print(f"WebSocket: ws://0.0.0.0:{PORT + 1}")
+                await asyncio.Future()
 
-    WEBSOCKET_AVAILABLE = True
-except ImportError:
-    WEBSOCKET_AVAILABLE = False
-    print("websockets not installed, HTTP only")
-
-
-def main():
-    http_server = HTTPServer(("0.0.0.0", PORT), SnakeHTTPHandler)
-    http_thread = threading.Thread(target=http_server.serve_forever, daemon=True)
-    http_thread.start()
-    
-    print(f"HTTP: http://0.0.0.0:{PORT}")
-    
-    if WEBSOCKET_AVAILABLE:
         asyncio.run(start_ws())
-    else:
-        http_server.serve_forever()
+    except Exception as e:
+        print(f"WebSocket error: {e}")
 
 
-if __name__ == "__main__":
-    main()
+# 启动服务器
+http_server = HTTPServer(("0.0.0.0", PORT), SnakeHTTPHandler)
+http_thread = threading.Thread(target=http_server.serve_forever, daemon=True)
+http_thread.start()
+
+print(f"HTTP: http://0.0.0.0:{PORT}")
+
+# 启动 WebSocket（使用单独的线程）
+ws_thread = threading.Thread(target=ws_server, daemon=True)
+ws_thread.start()
+
+# 保持运行
+while True:
+    import time
+    time.sleep(1)
