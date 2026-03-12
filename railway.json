@@ -4,11 +4,10 @@
     "builder": "RAILPACK",
     "buildCommand": "npm run build",
     "nixpacksConfig": {
-      "nodejs": {
-        "version": "22"
-      },
-      "python": {
-        "version": "3.12"
+      "phases": {
+        "setup": {
+          "nixPkgs": ["nodejs_22", "python313"]
+        }
       }
     }
   },
