@@ -1,5 +1,5 @@
-[build]
-build = "pip install -r requirements.txt && npm run build"
+[phases.build]
+build = "pip install -r requirements.txt && cd frontend && npm run build && cp -r dist/* ../dist/"
 
-[start]
-start = "uvicorn main:app --host 0.0.0.0 --port ${PORT}"
+[phases.start]
+start = "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT}"
