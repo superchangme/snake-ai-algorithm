@@ -1,9 +1,0 @@
-[phases.setup]
-nixPkgs = ["nodejs_22", "python313"]
-
-[phases.build]
-dependsOn = ["setup"]
-cmds = [
-  "cd frontend && npm install && npm run build",
-  "mkdir -p dist && cp -r frontend/dist/* dist/"
-]
