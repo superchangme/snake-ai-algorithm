@@ -34,9 +34,11 @@ export class AIController {
       this.apiUrl = 'http://localhost:8080';
       this.wsUrl = 'ws://localhost:8081';
     } else {
-      // 生产环境 - 使用当前域名
+      // 生产环境 - 使用当前域名和端口
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const port = window.location.port ? ':8081' : '';
+      // Railway 使用相同端口
+      const port = window.location.port ? `:${window.location.port}` : '';
+      this.apiUrl = `${protocol}//${window.location.hostname}${port}`;
       this.wsUrl = `${protocol}//${window.location.hostname}${port}`;
     }
   }
@@ -58,172 +60,230 @@ export class AIController {
         this.ws.onopen = () => {
           console.log('[AI] WebSocket connected');
           this.wsConnected = true;
+
+          // 发送初始化消息
+          this.sendWsMessage({
+            type: 'init',
+            width: this.mapWidth,
+            height: this.mapHeight,
+            game_id: this.gameId
+          });
+
+          // 处理队列
+          this.processWsQueue();
           resolve();
         };
         
         this.ws.onmessage = (event) => {
-          console.log('[AI] WS message:', event.data);
+          const data = JSON.parse(event.data);
+          console.log('[AI] WS message:', JSON.stringify(data));
+          
+          if (data.status === 'initialized') {
+            this.gameId = data.game_id;
+            console.log('[AI] Initialized (WS) with game_id:', this.gameId);
+            this.updateAiStatus('已连接');
+          } else if (data.direction) {
+            this.cachedDirection = this.parseDirection(data.direction);
+            this.updateAiStatus('运行中');
+          }
         };
         
         this.ws.onerror = (error) => {
           console.error('[AI] WebSocket error:', error);
+          this.updateAiStatus('连接错误');
           reject(error);
         };
         
         this.ws.onclose = () => {
           console.log('[AI] WebSocket closed');
           this.wsConnected = false;
-          this.ws = null;
+          this.updateAiStatus('已断开');
         };
         
-        // 超时
-        setTimeout(() => reject(new Error('WS connection timeout')), 5000);
-      } catch (e) {
-        reject(e);
-      }
-    });
-  }
-
-  private async wsSend(data: any): Promise<any> {
-    if (!this.ws || !this.wsConnected) {
-      await this.initWebSocket();
-    }
-    
-    return new Promise((resolve, reject) => {
-      if (!this.ws) {
-        reject(new Error('WebSocket not connected'));
-        return;
-      }
-      
-      const messageHandler = (event: MessageEvent) => {
-        this.ws?.removeEventListener('message', messageHandler);
-        try {
-          resolve(JSON.parse(event.data));
-        } catch (e) {
-          reject(e);
-        }
-      };
-      
-      this.ws.addEventListener('message', messageHandler);
-      this.ws.send(JSON.stringify(data));
-      
-      // 超时
-      setTimeout(() => {
-        this.ws?.removeEventListener('message', messageHandler);
-        reject(new Error('WS request timeout'));
-      }, 5000);
-    });
-  }
-
-  async init(snake: Snake): Promise<void> {
-    const snakeBody = snake.body.map(p => ({ x: p.x, y: p.y }));
-    const head = snakeBody[0];
-    const body = snakeBody.slice(1);
-    
-    try {
-      if (this.mode === 'ws') {
-        // WebSocket 模式
-        const data = await this.wsSend({
-          action: 'init',
-          size: this.mapWidth,
-          headX: head.x,
-          headY: head.y,
-          body: body
-        });
-        this.gameId = data.game_id || '';
-        console.log('[AI] Initialized (WS) with game_id:', this.gameId);
-      } else {
-        // HTTP 模式
-        const response = await fetch(this.apiUrl + '/init', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            size: this.mapWidth,
-            headX: head.x,
-            headY: head.y,
-            body: body
-          })
-        });
+        // 超时处理
+        setTimeout(() => {
+          if (!this.wsConnected) {
+            reject(new Error('WebSocket connection timeout'));
+          }
+        }, 5000);
         
-        if (response.ok) {
-          const data = await response.json();
-          this.gameId = data.game_id || '';
-          console.log('[AI] Initialized (HTTP) with game_id:', this.gameId);
-        }
+      } catch (error) {
+        reject(error);
       }
-    } catch (e) {
-      console.error('[AI] Init error:', e);
+    });
+  }
+
+  private async initHttp(): Promise<void> {
+    try {
+      const response = await fetch(`${this.apiUrl}/api`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      console.log('[AI] HTTP API initialized:', data);
+      this.updateAiStatus('HTTP 已连接');
+    } catch (error) {
+      console.error('[AI] HTTP init error:', error);
+      this.updateAiStatus('HTTP 错误');
+    }
+  }
+
+  async init(): Promise<void> {
+    if (this.mode === 'ws') {
+      await this.initWebSocket();
+    } else {
+      await this.initHttp();
     }
   }
 
   async getNextDirection(
     snake: Snake,
-    food: Food
+    food: Food,
+    width: number,
+    height: number
   ): Promise<Direction> {
-    const head = snake.getHead();
-    const snakeBody = snake.body.map(p => ({ x: p.x, y: p.y }));
-    const body = snakeBody.slice(1);
-    const foodPos = food.getPosition();
-    
-    try {
-      if (this.mode === 'ws') {
-        // WebSocket 模式
-        const data = await this.wsSend({
-          action: 'move',
-          size: this.mapWidth,
-          headX: head.x,
-          headY: head.y,
-          body: body,
-          foodX: foodPos.x,
-          foodY: foodPos.y
-        });
-        
-        const dirMap: Record<string, Direction> = {
-          'UP': { x: 0, y: -1 },
-          'DOWN': { x: 0, y: 1 },
-          'LEFT': { x: -1, y: 0 },
-          'RIGHT': { x: 1, y: 0 }
-        };
-        
-        return dirMap[data.direction] || this.cachedDirection;
-      } else {
-        // HTTP 模式
-        const response = await fetch(this.apiUrl + '/move', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            size: this.mapWidth,
-            headX: head.x,
-            headY: head.y,
-            body: body,
-            foodX: foodPos.x,
-            foodY: foodPos.y
-          })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const dirMap: Record<string, Direction> = {
-            'UP': { x: 0, y: -1 },
-            'DOWN': { x: 0, y: 1 },
-            'LEFT': { x: -1, y: 0 },
-            'RIGHT': { x: 1, y: 0 }
-          };
-          
-          return dirMap[data.direction] || this.cachedDirection;
-        }
-      }
-    } catch (e) {
-      console.error('[AI] getNextDirection error:', e);
+    if (this.mode === 'ws') {
+      return this.getNextDirectionWs(snake, food, width, height);
+    } else {
+      return this.getNextDirectionHttp(snake, food, width, height);
     }
-    
-    return this.cachedDirection;
   }
 
-  getStats(): { requestCount: number; mode: ConnectionMode } {
-    return {
-      requestCount: this.requestCount,
-      mode: this.mode
+  private async getNextDirectionWs(
+    snake: Snake,
+    food: Food,
+    width: number,
+    height: number
+  ): Promise<Direction> {
+    if (!this.wsConnected || !this.ws) {
+      console.log('[AI] WS not connected, using cached direction');
+      return this.cachedDirection;
+    }
+
+    return new Promise((resolve) => {
+      const messageHandler = (event: MessageEvent) => {
+        const data = JSON.parse(event.data);
+        if (data.direction) {
+          const direction = this.parseDirection(data.direction);
+          this.ws?.removeEventListener('message', messageHandler);
+          resolve(direction);
+        }
+      };
+
+      this.ws?.addEventListener('message', messageHandler);
+
+      this.sendWsMessage({
+        type: 'move',
+        snake: snake.body.map(p => ({ x: p.x, y: p.y })),
+        food: { x: food.position.x, y: food.position.y },
+        width,
+        height,
+        game_id: this.gameId
+      });
+
+      // 超时返回缓存方向
+      setTimeout(() => {
+        this.ws?.removeEventListener('message', messageHandler);
+        resolve(this.cachedDirection);
+      }, 100);
+    });
+  }
+
+  private async getNextDirectionHttp(
+    snake: Snake,
+    food: Food,
+    width: number,
+    height: number
+  ): Promise<Direction> {
+    // 限流：每 50ms 最多一次请求
+    const now = Date.now();
+    if (now - this.lastRequestTime < 50) {
+      return this.cachedDirection;
+    }
+    this.lastRequestTime = now;
+
+    try {
+      const response = await fetch(`${this.apiUrl}/api`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          snake: snake.body.map(p => ({ x: p.x, y: p.y })),
+          food: { x: food.position.x, y: food.position.y },
+          width,
+          height,
+          game_id: this.gameId || undefined
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.game_id) {
+        this.gameId = data.game_id;
+        this.updateAiStatus('运行中');
+      }
+
+      return this.parseDirection(data.direction);
+    } catch (error) {
+      console.error('[AI] HTTP request failed:', error);
+      return this.cachedDirection;
+    }
+  }
+
+  private parseDirection(dir: string | { x: number; y: number }): Direction {
+    if (typeof dir === 'object') {
+      return dir;
+    }
+    
+    const directionMap: Record<string, Direction> = {
+      'UP': { x: 0, y: -1 },
+      'DOWN': { x: 0, y: 1 },
+      'LEFT': { x: -1, y: 0 },
+      'RIGHT': { x: 1, y: 0 }
     };
+    
+    return directionMap[dir] || { x: 0, y: 1 };
+  }
+
+  private sendWsMessage(data: any): void {
+    if (this.ws && this.wsConnected) {
+      this.ws.send(JSON.stringify(data));
+    } else {
+      // 队列消息
+      this.wsQueue.push(async () => {
+        if (this.ws && this.wsConnected) {
+          this.ws.send(JSON.stringify(data));
+        }
+      });
+    }
+  }
+
+  private async processWsQueue(): Promise<void> {
+    while (this.wsQueue.length > 0) {
+      const fn = this.wsQueue.shift();
+      if (fn) await fn();
+    }
+  }
+
+  private updateAiStatus(status: string): void {
+    const aiStatusEl = document.getElementById('ai-status');
+    if (aiStatusEl) {
+      aiStatusEl.textContent = status;
+    }
+  }
+
+  reset(): void {
+    this.cachedDirection = { x: 0, y: 1 };
+    this.requestCount = 0;
+    this.gameId = '';
+    
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+      this.wsConnected = false;
+    }
   }
 }
