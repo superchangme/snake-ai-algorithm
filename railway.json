@@ -4,7 +4,9 @@
     "builder": "RAILPACK",
     "buildCommand": "cd frontend && npm install && npm run build && cp -r dist/* ../dist/",
     "nixpacksConfig": {
-      "RAILPACK_NODE_VERSION": "22"
+      "nodejs": {
+        "version": "22"
+      }
     }
   },
   "deploy": {
