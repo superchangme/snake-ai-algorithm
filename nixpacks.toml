@@ -1,2 +1,2 @@
 [build]
-build = "cd frontend && npm install && npm run build && cp -r frontend/dist/* dist/"
+build = "cd frontend && npm install && npm run build && cp -r dist/* ../dist/"
