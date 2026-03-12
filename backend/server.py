@@ -48,7 +48,7 @@ class SnakeHTTPHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/api":
-            self._send_json({"status": "ok", "algorithm": "phase17-tweak", "ws_port": PORT})
+            self._send_json({"status": "ok", "algorithm": "phase17-tweak", "ws_port": PORT + 1})
             return
         
         if self.path.startswith("/assets/"):
@@ -186,8 +186,8 @@ def ws_server():
             print(f"[WS] Client disconnected")
 
         async def start_ws():
-            async with websockets.serve(ws_handler, "0.0.0.0", PORT):
-                print(f"WebSocket: ws://0.0.0.0:{PORT}")
+            async with websockets.serve(ws_handler, "0.0.0.0", PORT + 1):
+                print(f"WebSocket: ws://0.0.0.0:{PORT + 1}")
                 await asyncio.Future()
 
         asyncio.run(start_ws())
