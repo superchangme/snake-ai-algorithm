@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build && cp -r dist/* ../dist/"
+    "build": "cd frontend && npm install && npm run build && mkdir -p ../dist && cp -r dist/* ../dist/"
   },
   "devDependencies": {}
 }
