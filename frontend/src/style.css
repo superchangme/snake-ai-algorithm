@@ -16,6 +16,7 @@ body {
 }
 
 .container {
+  width: 100%;
   max-width: 800px;
 }
 
@@ -23,69 +24,89 @@ h1 {
   text-align: center;
   margin-bottom: 10px;
   color: #00ff88;
-  font-size: 2rem;
+  font-size: 1.8rem;
 }
 
 .control-panel {
   background: #1a1a2e;
   border-radius: 12px;
-  padding: 10px;
+  padding: 12px;
   margin-bottom: 10px;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.control-row {
+  display: flex;
   flex-wrap: wrap;
-  gap: 20px;
-  align-items: flex-start;
+  gap: 15px;
+  justify-content: space-between;
 }
 
 .control-group {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-label {
+.control-group label {
   color: #aaa;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 input[type="number"] {
-  width: 60px;
-  padding: 8px;
+  width: 55px;
+  padding: 6px 8px;
   border: 1px solid #333;
   border-radius: 6px;
   background: #0f0f1a;
   color: #fff;
+  font-size: 14px;
 }
 
 input[type="range"] {
-  width: 100px;
+  width: 80px;
 }
 
 .mode-buttons {
   display: flex;
-  gap: 5px;
+  gap: 4px;
 }
 
 .mode-btn {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border: 1px solid #333;
   background: #0f0f1a;
   color: #aaa;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
 }
 
 .mode-btn.active {
   background: #00ff88;
   color: #000;
   border-color: #00ff88;
+  font-weight: bold;
 }
 
-.btn {
-  padding: 10px 20px;
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-buttons .btn {
+  flex: 1;
+  padding: 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: bold;
 }
 
 .btn.primary {
@@ -105,25 +126,29 @@ input[type="range"] {
 
 .game-info {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   background: #1a1a2e;
-  padding: 15px;
+  padding: 12px;
   border-radius: 12px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .info-item {
   text-align: center;
+  flex: 1 1 45%;
 }
 
 .info-item .label {
   color: #666;
   font-size: 12px;
+  display: block;
 }
 
 .info-item .value {
   display: block;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   color: #00ff88;
 }
@@ -131,9 +156,107 @@ input[type="range"] {
 .game-container {
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 canvas {
   border: 2px solid #333;
   border-radius: 8px;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Mobile optimizations */
+@media (max-width: 600px) {
+  body {
+    padding: 6px;
+  }
+  
+  h1 {
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+  }
+  
+  .control-panel {
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .control-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .control-group {
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .control-group label {
+    font-size: 13px;
+  }
+  
+  .mode-buttons {
+    width: 60%;
+  }
+  
+  .mode-btn {
+    flex: 1;
+    padding: 8px 6px;
+    font-size: 12px;
+    text-align: center;
+  }
+  
+  .action-buttons {
+    margin-top: 4px;
+  }
+  
+  .action-buttons .btn {
+    padding: 12px 8px;
+    font-size: 14px;
+  }
+  
+  .game-info {
+    padding: 10px;
+    gap: 6px;
+  }
+  
+  .info-item {
+    flex: 1 1 45%;
+    padding: 4px 0;
+  }
+  
+  .info-item .label {
+    font-size: 11px;
+  }
+  
+  .info-item .value {
+    font-size: 15px;
+  }
+  
+  canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 380px) {
+  h1 {
+    font-size: 1.2rem;
+  }
+  
+  .mode-btn {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+  
+  .action-buttons .btn {
+    padding: 10px 4px;
+    font-size: 12px;
+  }
+  
+  .info-item {
+    flex: 1 1 100%;
+  }
 }
