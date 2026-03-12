@@ -10,6 +10,26 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+
+# MIME 类型映射
+def get_content_type(path: str) -> str:
+    ext = path.split('.')[-1]
+    types = {
+        'js': 'application/javascript',
+        'css': 'text/css',
+        'html': 'text/html',
+        'json': 'application/json',
+        'png': 'image/png',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'gif': 'image/gif',
+        'svg': 'image/svg+xml',
+        'ico': 'image/x-icon',
+    }
+    return types.get(ext, 'text/plain')
+
+
+
 from backend.phase17_tweak import TweakAI
 
 app = FastAPI()
@@ -173,7 +193,7 @@ async def serve_index():
     """服务 index.html"""
     index_path = os.path.join(DIST_DIR, "index.html")
     if os.path.exists(index_path):
-        return FileResponse(index_path)
+        return FileResponse(index_path, media_type="text/html")
     return {"error": "index.html not found"}
 
 
@@ -186,12 +206,12 @@ async def serve_static(path: str):
     
     file_path = os.path.join(DIST_DIR, path)
     if os.path.exists(file_path) and os.path.isfile(file_path):
-        return FileResponse(file_path)
+        return FileResponse(file_path, media_type=get_content_type(file_path))
     
     # 如果是目录，尝试找 index.html
     index_path = os.path.join(DIST_DIR, "index.html")
     if os.path.exists(index_path):
-        return FileResponse(index_path)
+        return FileResponse(index_path, media_type="text/html")
     
     return {"error": "Not found"}
 
