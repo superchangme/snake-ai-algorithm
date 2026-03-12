@@ -353,6 +353,10 @@ httpModeBtn.addEventListener('click', () => {
   }
   httpModeBtn.classList.add('active');
   wsModeBtn.classList.remove('active');
+  // Update URL without refresh
+  const url = new URL(window.location.href);
+  url.searchParams.set('mode', 'http');
+  window.history.replaceState({}, '', url);
 
 wsModeBtn.addEventListener('click', () => {
   if (aiController) {
@@ -360,6 +364,10 @@ wsModeBtn.addEventListener('click', () => {
   }
   wsModeBtn.classList.add('active');
   httpModeBtn.classList.remove('active');
+  // Update URL without refresh
+  const url = new URL(window.location.href);
+  url.searchParams.set('mode', 'ws');
+  window.history.replaceState({}, '', url);
 });});
 
 aiModeBtn.addEventListener('click', () => {
