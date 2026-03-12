@@ -385,17 +385,17 @@ document.addEventListener('keydown', (e) => {
   if (!game || isAI || gameEnded) return;
   
   const keyMap: Record<string, [number, number]> = {
-    'ArrowUp': [0, -1], 'ArrowDown': [0, 1],
+    'ArrowUp': [0, -1], 'KeyW': [0, -1], 'KeyS': [0, 1], 'KeyA': [-1, 0], 'KeyD': [1, 0], 'ArrowDown': [0, 1],
     'ArrowLeft': [-1, 0], 'ArrowRight': [1, 0]
   };
   
-  if (keyMap[e.key]) {
+  if (keyMap[e.key] || keyMap[e.code]) {
     if (waitingForFirstInput) {
       waitingForFirstInput = false;
       gameRunning = true;
       gameLoopHuman();
     }
-    const [dx, dy] = keyMap[e.key];
+    const [dx, dy] = keyMap[e.key] || keyMap[e.code];
     game.setDirection({ x: dx, y: dy });
   }
   if (e.code === 'Space') {
