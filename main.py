@@ -188,32 +188,27 @@ async def websocket_endpoint(websocket: WebSocket):
 
 # ============ 静态文件服务 ============
 
+# 使用 FastAPI StaticFiles 更可靠地服务静态文件
+app.mount("/assets", StaticFiles(directory=os.path.join(DIST_DIR, "assets")), name="assets")
+
+
 @app.get("/")
 async def serve_index():
     """服务 index.html"""
     index_path = os.path.join(DIST_DIR, "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path, media_type="text/html")
-    return {"error": "index.html not found"}
+    return FileResponse(index_path, media_type="text/html")
 
 
 @app.get("/{path:path}")
 async def serve_static(path: str):
-    """服务静态文件"""
-    # 跳过 API 路径
+    """SPA 路由 fallback - 所有未匹配路径返回 index.html"""
+    # API 路径不处理
     if path.startswith("api"):
         return {"error": "Not found"}
     
-    file_path = os.path.join(DIST_DIR, path)
-    if os.path.exists(file_path) and os.path.isfile(file_path):
-        return FileResponse(file_path, media_type=get_content_type(file_path))
-    
-    # 如果是目录，尝试找 index.html
+    # 返回 index.html 让 SPA 处理路由
     index_path = os.path.join(DIST_DIR, "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path, media_type="text/html")
-    
-    return {"error": "Not found"}
+    return FileResponse(index_path, media_type="text/html")
 
 
 if __name__ == "__main__":
