@@ -165,7 +165,7 @@ async function gameLoopAI(currentLoopId: number): Promise<void> {
         direction = await aiController.getNextDirection(
           game.getSnake(),
           game.getFood(),
-          game.getObstacles()
+          game.getGridSize().width, game.getGridSize().height
         );
       } catch (e) {
         console.error('getNextDirection error:', e);

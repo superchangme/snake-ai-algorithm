@@ -6,7 +6,8 @@ FastAPI 后端 - 贪吃蛇 AI
 import os
 import json
 import uuid
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import sys
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
@@ -60,36 +61,37 @@ async def get_api_info():
 
 
 @app.post("/api")
-async def post_api_move(data: dict):
+async def post_api_move(request: Request):
     """处理移动请求"""
-    width = data.get("width", 10)
-    height = data.get("height", 10)
-    game_id = data.get("game_id")
+    body = await request.json()
+    
+    # Debug
+    sys.stderr.write(f"DEBUG: received body = {body}\n")
+    
+    # 安全提取数值
+    try:
+        width = int(body.get("width", 10))
+    except (TypeError, ValueError):
+        width = 10
+    try:
+        height = int(body.get("height", 10))
+    except (TypeError, ValueError):
+        height = 10
+    
+    game_id = body.get("game_id")
     
     # 解析蛇身
-    snake_body = data.get("snake", [])
+    snake_body = body.get("snake", [])
     snake_positions = [(p["x"], p["y"]) for p in snake_body]
     
     # 解析食物
-    food_pos = data.get("food", {"x": 0, "y": 0})
+    food_pos = body.get("food", {"x": 0, "y": 0})
     food_position = (food_pos["x"], food_pos["y"])
     
     # 获取 AI
     ai = get_ai(width, height)
     
-    # 创建临时蛇对象用于 AI 计算
-    class TempSnake:
-        def __init__(self, body):
-            self.body = body
-    
-    class TempFood:
-        def __init__(self, pos):
-            self.position = pos
-    
-    snake = TempSnake(snake_positions)
-    food = TempFood(food_position)
-    
-    # 获取方向
+    # 获取方向 - 传入列表而不是对象
     direction = ai.get_direction(snake_positions, food_position)
     
     # 方向映射
@@ -150,17 +152,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 food_pos = msg.get("food", {"x": 0, "y": 0})
                 food_position = (food_pos["x"], food_pos["y"])
-                
-                class TempSnake:
-                    def __init__(self, body):
-                        self.body = body
-                
-                class TempFood:
-                    def __init__(self, pos):
-                        self.position = pos
-                
-                snake = TempSnake(snake_positions)
-                food = TempFood(food_position)
                 
                 direction = ai_instance.get_direction(snake_positions, food_position)
                 
