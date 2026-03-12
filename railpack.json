@@ -5,7 +5,13 @@
     "node": "22"
   },
   "steps": {
+    "install": {
+      "commands": [
+        "cd /app/frontend && npm install"
+      ]
+    },
     "build": {
+      "inputs": [{ "step": "install" }],
       "commands": [
         "cd /app/frontend && npm run build && mkdir -p /app/dist && cp -r dist/* /app/dist/"
       ]
