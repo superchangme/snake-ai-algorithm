@@ -1,5 +1,2 @@
 [phases.build]
 build = "pip install -r requirements.txt && cd frontend && npm run build && cp -r dist/* ../dist/"
-
-[phases.start]
-start = "/bin/sh -c \"exec python -m uvicorn main:app --host 0.0.0.0 --port ${PORT}\""
