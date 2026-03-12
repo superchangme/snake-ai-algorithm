@@ -17,7 +17,6 @@ export class AIController {
   private cachedDirection: Direction = { x: 0, y: 1 };
   private requestCount: number = 0;
   private gameId: string = '';
-  private wsPort: number = 8081; // 默认
 
   constructor(width: number, height: number) {
     this.mapWidth = width;
@@ -31,16 +30,11 @@ export class AIController {
     }
     
     // 确定 URL
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (isLocal) {
-      this.apiUrl = 'http://localhost:8080';
-      this.wsUrl = 'ws://localhost:8081';
-    } else {
-      // 生产环境 - 先设置基础 URL，稍后从 /api 获取 ws_port
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      this.apiUrl = `${protocol}//${window.location.host}`;
-      this.wsUrl = `${protocol}//${window.location.host}`; // 暂时用 same host
-    }
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    // WebSocket 路径为 /ws
+    this.wsUrl = `${protocol}//${host}/ws`;
+    this.apiUrl = window.location.origin;
   }
 
   setMode(mode: ConnectionMode): void {
@@ -52,32 +46,10 @@ export class AIController {
     return this.mode;
   }
 
-  private async fetchWsPort(): Promise<void> {
-    try {
-      const response = await fetch(`${this.apiUrl}/api`);
-      const data = await response.json();
-      if (data.ws_port) {
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        if (isLocal) {
-          this.wsUrl = `ws://localhost:${data.ws_port}`;
-        } else {
-          // Railway: 使用相同的 host 但不同端口
-          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          this.wsUrl = `${protocol}//${window.location.hostname}:${data.ws_port}`;
-        }
-        console.log('[AI] WS port:', data.ws_port, '->', this.wsUrl);
-      }
-    } catch (e) {
-      console.error('[AI] Failed to fetch ws_port:', e);
-    }
-  }
-
   private async initWebSocket(): Promise<void> {
-    // 先获取正确的 WS 端口
-    await this.fetchWsPort();
-    
     return new Promise((resolve, reject) => {
       try {
+        console.log('[AI] Connecting to WS:', this.wsUrl);
         this.ws = new WebSocket(this.wsUrl);
         
         this.ws.onopen = () => {
