@@ -11,17 +11,19 @@ COPY requirements.txt .
 
 # 复制前端源码
 COPY frontend/package*.json frontend/
+COPY frontend/index.html frontend/
+
 WORKDIR /app/frontend
 RUN npm install
 
-# 构建前端
 COPY frontend/src ./src
-COPY frontend/index.html .
 RUN npm run build
 
-# 复制前端构建结果
+# 复制前端构建结果到 /app/dist
+RUN mkdir -p /app/dist && cp -r dist/* /app/dist/
+
+# 回到 /app
 WORKDIR /app
-COPY frontend/dist ./dist
 
 # 暴露端口
 EXPOSE 8080
