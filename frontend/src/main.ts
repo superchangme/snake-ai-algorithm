@@ -19,6 +19,18 @@ const aiModeBtn = document.getElementById('ai-mode') as HTMLButtonElement;
 const gameStatusEl = document.getElementById('game-status')!;
 const scoreEl = document.getElementById('score')!;
 const stepsEl = document.getElementById('steps')!;
+
+// 根据 URL 参数初始化连接模式按钮状态
+const urlParams = new URLSearchParams(window.location.search);
+const modeParam = urlParams.get('mode');
+if (modeParam === 'ws') {
+  wsModeBtn.classList.add('active');
+  httpModeBtn.classList.remove('active');
+} else {
+  httpModeBtn.classList.add('active');
+  wsModeBtn.classList.remove('active');
+}
+
 const aiStatusEl = document.getElementById('ai-status')!;
 
 let game: Game;
