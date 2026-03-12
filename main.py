@@ -10,12 +10,12 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from phase17_tweak import TweakAI
+from backend.phase17_tweak import TweakAI
 
 app = FastAPI()
 
 # 静态文件目录
-DIST_DIR = os.path.join(os.path.dirname(__file__), "..", "dist")
+DIST_DIR = os.path.join(os.path.dirname(__file__), "dist")
 
 # 游戏实例缓存
 ai_cache = {}
