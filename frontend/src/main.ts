@@ -37,6 +37,7 @@ let game: Game;
 let aiController: AIController | null = null;
 let isAI = true;
 let isPaused = false;
+let waitingForFirstInput = isAI ? false : true;
 let gameRunning = false;
 let gameEnded = false;
 let loopId = 0;
@@ -240,7 +241,7 @@ async function handleGameOver(): Promise<void> {
 // 人类模式
 let humanInterval: number | null = null;
 function gameLoopHuman(): void {
-  if (!gameRunning || isPaused || !game || gameEnded) return;
+  if (!gameRunning || isPaused || !game || gameEnded || waitingForFirstInput) return;
   
   if (!game.isRunning || game.isOver) {
     handleGameOverHuman();
@@ -389,6 +390,11 @@ document.addEventListener('keydown', (e) => {
   };
   
   if (keyMap[e.key]) {
+    if (waitingForFirstInput) {
+      waitingForFirstInput = false;
+      gameRunning = true;
+      gameLoopHuman();
+    }
     const [dx, dy] = keyMap[e.key];
     game.setDirection({ x: dx, y: dy });
   }
