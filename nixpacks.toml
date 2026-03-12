@@ -1,5 +1,2 @@
-[phases.setup]
-aptPackages = ["nodejs", "npm"]
-
-[phases.build]
-command = "cd frontend && npm install && npm run build"
+[build]
+build = "cd frontend && npm install && npm run build"
