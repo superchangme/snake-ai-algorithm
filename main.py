@@ -90,7 +90,7 @@ async def post_api_move(data: dict):
     food = TempFood(food_position)
     
     # 获取方向
-    direction = ai.get_direction(snake, food)
+    direction = ai.get_direction(snake_positions, food_position)
     
     # 方向映射
     dir_map = {
@@ -162,7 +162,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 snake = TempSnake(snake_positions)
                 food = TempFood(food_position)
                 
-                direction = ai_instance.get_direction(snake, food)
+                direction = ai_instance.get_direction(snake_positions, food_position)
                 
                 dir_map = {
                     (0, -1): "UP",
