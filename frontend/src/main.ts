@@ -143,7 +143,7 @@ async function startGame(): Promise<void> {
   gameEnded = false;
   loopId++;
   
-  if (isAI && !aiController) {
+  if (!aiController) {
     aiController = new AIController(gridSize, gridSize);
   }
   if (isAI && aiController) {
