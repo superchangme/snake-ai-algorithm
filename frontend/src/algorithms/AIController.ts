@@ -30,13 +30,20 @@ export class AIController {
     }
     
     // 确定 URL
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // 开发环境连接 8080 端口，生产环境用当前端口
+    // 开发环境：HTTP 走 Vite 代理（相对路径），WS 用 hostname:port 构建
+    // 生产环境：用当前 origin
     const isDev = window.location.port === '3000';
-    const host = isDev ? 'localhost:8080' : window.location.host;
-    // WebSocket 路径为 /ws
-    this.wsUrl = `${protocol}//${host}/ws`;
-    this.apiUrl = isDev ? 'http://localhost:8080' : window.location.origin;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    
+    if (isDev) {
+      // 开发环境：HTTP 走代理（相对路径），WS 用 hostname:port
+      this.apiUrl = '';  // 空字符串 = 相对路径
+      this.wsUrl = `${protocol}//${window.location.hostname}:8080/ws`;
+    } else {
+      // 生产环境：同源
+      this.apiUrl = window.location.origin;
+      this.wsUrl = `${protocol}//${window.location.host}/ws`;
+    }
   }
 
   setMode(mode: ConnectionMode): void {
