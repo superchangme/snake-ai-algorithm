@@ -7,7 +7,7 @@
   "steps": {
     "build": {
       "commands": [
-        "cd /app/frontend && npm install && npm run build && mkdir -p /app/dist && cp -r dist/* /app/dist/"
+        "cd /app/frontend && npm install && npm run build"
       ]
     }
   }
