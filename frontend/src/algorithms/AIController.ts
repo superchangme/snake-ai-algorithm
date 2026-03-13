@@ -78,10 +78,6 @@ export class AIController {
             height: this.mapHeight,
             game_id: this.gameId
           });
-
-          // 处理队列
-          this.processWsQueue();
-          resolve();
         };
         
         this.ws.onmessage = (event) => {
@@ -93,6 +89,9 @@ export class AIController {
             this.gameId = data.game_id;
             console.log('[AI] Initialized (WS) with game_id:', this.gameId);
             this.updateAiStatus('已连接');
+            // 等到收到 initialized 后才 resolve
+            this.processWsQueue();
+            resolve();
           } else if (data.direction) {
             this.cachedDirection = this.parseDirection(data.direction);
             this.updateAiStatus('运行中');
