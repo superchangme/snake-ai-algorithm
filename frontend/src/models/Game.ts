@@ -84,6 +84,7 @@ export class Game {
   }
   
   start(): void {
+    console.log("Game start - snake position:", JSON.stringify(this.snake.body));
     this.isRunning = true;
     this.isOver = false;
     this.isWon = false;
@@ -102,7 +103,7 @@ export class Game {
     
     // 先检查是否撞墙
     const dirInfo = 'dir=' + JSON.stringify(dir) + ' nextDir=' + JSON.stringify(this.snake.nextDirection);
-    console.log('Check - head:', nextX, nextY, dirInfo);
+    console.log('Check - head:', nextX, nextY, 'body:', JSON.stringify(this.snake.body), dirInfo);
     if (nextX < 0 || nextX >= this.width || nextY < 0 || nextY >= this.height) {
       console.log('Hit wall!');
       this.isOver = true;

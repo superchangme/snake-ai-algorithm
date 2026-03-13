@@ -59,6 +59,11 @@ export class AIController {
   private async initWebSocket(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
+        // 关闭已有连接
+        if (this.ws) {
+          this.ws.close();
+          this.ws = null;
+        }
         console.log('[AI] Connecting to WS:', this.wsUrl);
         this.ws = new WebSocket(this.wsUrl);
         
@@ -112,7 +117,7 @@ export class AIController {
           if (!this.wsConnected) {
             reject(new Error('WebSocket connection timeout'));
           }
-        }, 5000);
+        }, 15000);
         
       } catch (error) {
         reject(error);

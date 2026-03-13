@@ -143,8 +143,10 @@ async function startGame(): Promise<void> {
   gameEnded = false;
   loopId++;
   
-  if (isAI) {
+  if (isAI && !aiController) {
     aiController = new AIController(gridSize, gridSize);
+  }
+  if (isAI && aiController) {
     try {
       await aiController.init(game.getSnake());
     } catch (e) {
@@ -169,6 +171,17 @@ async function startGame(): Promise<void> {
 }
 
 // AI模式
+// 更新方向显示
+function updateDirectionDisplay(dir: { x: number; y: number }) {
+  const dirNames: Record<string, string> = {
+    '0,-1': '↑', '0,1': '↓', '-1,0': '←', '1,0': '→'
+  };
+  const dirKey = dir.x + ',' + dir.y;
+  const dirName = dirNames[dirKey] || '?';
+  if (summaryDir) summaryDir.textContent = dirName;
+}
+
+
 async function gameLoopAI(currentLoopId: number): Promise<void> {
   try {
     if (currentLoopId !== loopId || !gameRunning || !game || isPaused || gameEnded) {
