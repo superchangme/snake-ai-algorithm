@@ -426,4 +426,56 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// 移动端开始按钮
+const startBtnMobile = document.getElementById('start-btn-mobile') as HTMLButtonElement;
+startBtnMobile.addEventListener('click', async () => {
+  startBtnMobile.style.display = 'none';
+  const pauseBtnMobile = document.getElementById('pause-btn-mobile') as HTMLButtonElement;
+  pauseBtnMobile.style.display = 'block';
+  await startGame();
+});
+
+// 移动端暂停按钮
+const pauseBtnMobile = document.getElementById('pause-btn-mobile') as HTMLButtonElement;
+pauseBtnMobile.addEventListener('click', () => {
+  togglePause();
+  if (isPaused) {
+    pauseBtnMobile.textContent = '▶';
+  } else {
+    pauseBtnMobile.textContent = '⏸';
+  }
+});
+
+// 移动端重置按钮
+const resetBtnMobile = document.getElementById('reset-btn-mobile') as HTMLButtonElement;
+resetBtnMobile.addEventListener('click', () => {
+  resetGame();
+  const startBtnMobile = document.getElementById('start-btn-mobile') as HTMLButtonElement;
+  startBtnMobile.style.display = 'block';
+  const pauseBtnMobile = document.getElementById('pause-btn-mobile') as HTMLButtonElement;
+  pauseBtnMobile.style.display = 'none';
+});
+
+// 移动端游戏手柄按钮事件
+document.querySelectorAll('.dpad-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    if (!game || isAI || gameEnded) return;
+    
+    const dir = (e.target as HTMLElement).dataset.dir;
+    const dirMap: Record<string, [number, number]> = {
+      'up': [0, -1], 'down': [0, 1], 'left': [-1, 0], 'right': [1, 0]
+    };
+    
+    if (dir && dirMap[dir]) {
+      if (waitingForFirstInput) {
+        waitingForFirstInput = false;
+        gameRunning = true;
+        gameLoopHuman();
+      }
+      const [dx, dy] = dirMap[dir];
+      game.setDirection({ x: dx, y: dy });
+    }
+  });
+});
+
 initFromURL();
