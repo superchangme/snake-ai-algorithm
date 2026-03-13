@@ -38,6 +38,7 @@ aiModeBtn.classList.remove('active');
 // 更新顶部显示
 const summaryMode = document.getElementById('summary-mode') as HTMLSpanElement;
 const summarySpeed = document.getElementById('summary-speed') as HTMLSpanElement;
+const summaryDir = document.getElementById('summary-dir') as HTMLSpanElement;
 if (summaryMode) {
   summaryMode.textContent = '人类';
 }
@@ -159,8 +160,10 @@ async function startGame(): Promise<void> {
   if (isAI) {
     gameLoopAI(loopId);
   } else {
-    // 设置初始向右移动
-    game.setDirection({ x: 0, y: 1 });
+    // 设置初始向下移动
+    const initDir = { x: 0, y: 1 };
+    game.setDirection(initDir);
+    updateDirectionDisplay(initDir);
     gameLoopHuman();
   }
 }
@@ -190,17 +193,29 @@ async function gameLoopAI(currentLoopId: number): Promise<void> {
         const dirBtnMap: Record<string, string> = {
           '0,-1': 'dpad-up', '0,1': 'dpad-down', '-1,0': 'dpad-left', '1,0': 'dpad-right'
         };
+        const dirNameMap: Record<string, string> = {
+          '0,-1': '↑ 上', '0,1': '↓ 下', '-1,0': '← 左', '1,0': '→ 右'
+        };
         const dirKey = direction.x + ',' + direction.y;
+        const dirName = dirNameMap[dirKey] || '?';
         document.querySelectorAll('.dpad-btn').forEach(btn => btn.classList.remove('active'));
         const activeBtn = document.querySelector('.' + dirBtnMap[dirKey]);
-        if (activeBtn) activeBtn.classList.add('active');
+        if (activeBtn) {
+          activeBtn.classList.add('active');
+          updateDirectionDisplay(direction);
+        }
       } catch (e) {
         console.error('getNextDirection error:', e);
       }
     }
     
     game.setDirection(direction);
-    aiStatusEl.textContent = direction.x + ',' + direction.y;
+    // 显示人类可读的方向
+    const dirNames: Record<string, string> = {
+      '0,-1': '上', '0,1': '下', '-1,0': '左', '1,0': '右'
+    };
+    const dirKey = direction.x + ',' + direction.y;
+    aiStatusEl.textContent = dirNames[dirKey] || dirKey;
     
     game.update();
     updateUI();
@@ -446,7 +461,9 @@ document.addEventListener('keydown', (e) => {
   
   if (keyMap[e.key] || keyMap[e.code]) {
     const [dx, dy] = keyMap[e.key] || keyMap[e.code];
-    game.setDirection({ x: dx, y: dy });
+    const newDir = { x: dx, y: dy };
+    game.setDirection(newDir);
+    updateDirectionDisplay(newDir);
   }
   if (e.code === 'Space') {
     e.preventDefault();
@@ -496,7 +513,9 @@ document.querySelectorAll('.dpad-btn').forEach(btn => {
     
     if (dir && dirMap[dir]) {
       const [dx, dy] = dirMap[dir];
-      game.setDirection({ x: dx, y: dy });
+      const newDir = { x: dx, y: dy };
+      game.setDirection(newDir);
+      updateDirectionDisplay(newDir);
     }
   });
 });

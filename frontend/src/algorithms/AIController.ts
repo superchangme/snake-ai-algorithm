@@ -159,9 +159,16 @@ export class AIController {
     width: number,
     height: number
   ): Promise<Direction> {
+    // 确保 WS 已连接（等待连接完成）
     if (!this.wsConnected || !this.ws) {
-      console.log('[AI] WS not connected, using cached direction');
-      return this.cachedDirection;
+      console.log('[AI] WS not connected, waiting for connection...');
+      try {
+        await this.initWebSocket();
+      } catch (e) {
+        console.error('[AI] WS connection failed:', e);
+        // 不再返回缓存方向，返回默认向上
+        return { x: 0, y: -1 };
+      }
     }
 
     return new Promise((resolve) => {
