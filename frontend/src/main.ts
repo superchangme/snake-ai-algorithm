@@ -273,7 +273,7 @@ function gameLoopHuman(): void {
   }
   
   const speed = parseInt(speedInput.value);
-  const delay = 100;
+  const delay = Math.max(50, 500 - speed * 45);  // Speed 1=455ms, 5=275ms, 10=50ms
   humanInterval = window.setTimeout(gameLoopHuman, delay);
 }
 
