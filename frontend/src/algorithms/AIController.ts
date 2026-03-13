@@ -12,6 +12,7 @@ export class AIController {
   private mode: ConnectionMode = 'http';
   private ws: WebSocket | null = null;
   private wsConnected: boolean = false;
+  private wsInitialized: boolean = false;  // init 完成后才标记
   private wsQueue: Array<() => Promise<void>> = [];
   private lastRequestTime: number = 0;
   private cachedDirection: Direction = { x: 0, y: 1 };
@@ -83,6 +84,7 @@ export class AIController {
           console.log('[AI] WS message:', JSON.stringify(data));
           
           if (data.status === 'initialized') {
+            this.wsInitialized = true;
             this.gameId = data.game_id;
             console.log('[AI] Initialized (WS) with game_id:', this.gameId);
             this.updateAiStatus('已连接');
@@ -101,6 +103,7 @@ export class AIController {
         this.ws.onclose = () => {
           console.log('[AI] WebSocket closed');
           this.wsConnected = false;
+      this.wsInitialized = false;
           this.updateAiStatus('已断开');
         };
         
@@ -160,7 +163,8 @@ export class AIController {
     height: number
   ): Promise<Direction> {
     // 确保 WS 已连接（等待连接完成）
-    if (!this.wsConnected || !this.ws) {
+    // 必须等 WS 初始化完成才能发 move
+    if (!this.wsInitialized || !this.ws || !this.wsConnected) {
       console.log('[AI] WS not connected, waiting for connection...');
       try {
         await this.initWebSocket();
@@ -289,6 +293,7 @@ export class AIController {
       this.ws.close();
       this.ws = null;
       this.wsConnected = false;
+      this.wsInitialized = false;
     }
   }
 }
