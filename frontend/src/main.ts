@@ -35,6 +35,12 @@ if (modeParam === 'ws') {
 humanModeBtn.classList.add('active');
 aiModeBtn.classList.remove('active');
 
+// 更新顶部显示
+const summaryMode = document.getElementById('summary-mode') as HTMLSpanElement;
+if (summaryMode) {
+  summaryMode.textContent = '人类';
+}
+
 const aiStatusEl = document.getElementById('ai-status')!;
 
 let game: Game;
@@ -356,6 +362,8 @@ humanModeBtn.addEventListener('click', () => {
   isAI = false;
   humanModeBtn.classList.add('active');
   aiModeBtn.classList.remove('active');
+  const summaryMode = document.getElementById('summary-mode');
+  if (summaryMode) summaryMode.textContent = '人类';
   resetGame();
 });
 
@@ -385,6 +393,8 @@ wsModeBtn.addEventListener('click', () => {
 
 aiModeBtn.addEventListener('click', () => {
   isAI = true;
+  const summaryMode = document.getElementById('summary-mode');
+  if (summaryMode) summaryMode.textContent = 'AI';
   if (aiController) {
     wsModeBtn.classList.contains('active') ? aiController.setMode('ws') : aiController.setMode('http');
   }
