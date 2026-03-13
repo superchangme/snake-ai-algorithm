@@ -37,8 +37,13 @@ aiModeBtn.classList.remove('active');
 
 // 更新顶部显示
 const summaryMode = document.getElementById('summary-mode') as HTMLSpanElement;
+const summarySpeed = document.getElementById('summary-speed') as HTMLSpanElement;
 if (summaryMode) {
   summaryMode.textContent = '人类';
+}
+if (summarySpeed) {
+  summarySpeed.textContent = '速度' + speedInput.value;
+  summarySpeed.style.display = 'inline';
 }
 
 const aiStatusEl = document.getElementById('ai-status')!;
@@ -198,9 +203,6 @@ async function gameLoopAI(currentLoopId: number): Promise<void> {
     }
     
     const speed = parseInt(speedInput.value);
-    const delay = 100;
-    
-    await new Promise(r => setTimeout(r, delay));
     
     if (currentLoopId !== loopId) {
       return;
@@ -345,6 +347,11 @@ mapSizeInput.addEventListener('input', () => {
 
 speedInput.addEventListener('input', () => {
   speedDisplay.textContent = speedInput.value;
+  // 更新顶部显示
+  const summarySpeed = document.getElementById('summary-speed');
+  if (summarySpeed) {
+    summarySpeed.textContent = '速度' + speedInput.value;
+  }
 });
 
 startBtn.addEventListener('click', async () => {
@@ -365,6 +372,12 @@ settingsToggle.addEventListener('click', () => {
 
 humanModeBtn.addEventListener('click', () => {
   isAI = false;
+  // 显示速度控制
+  const speedGroup = speedInput.parentElement;
+  if (speedGroup) speedGroup.style.display = 'block';
+  // 显示顶部速度
+  const summarySpeed = document.getElementById('summary-speed');
+  if (summarySpeed) summarySpeed.style.display = 'inline';
   humanModeBtn.classList.add('active');
   aiModeBtn.classList.remove('active');
   const summaryMode = document.getElementById('summary-mode');
@@ -398,6 +411,12 @@ wsModeBtn.addEventListener('click', () => {
 
 aiModeBtn.addEventListener('click', () => {
   isAI = true;
+  // 隐藏速度控制
+  const speedGroup = speedInput.parentElement;
+  if (speedGroup) speedGroup.style.display = 'none';
+  // 隐藏顶部速度显示
+  const summarySpeed = document.getElementById('summary-speed');
+  if (summarySpeed) summarySpeed.style.display = 'none';
   const summaryMode = document.getElementById('summary-mode');
   if (summaryMode) summaryMode.textContent = 'AI';
   if (aiController) {
