@@ -186,7 +186,7 @@ async function gameLoopAI(currentLoopId: number): Promise<void> {
     }
     
     const speed = parseInt(speedInput.value);
-    const delay = Math.max(50, 500 - speed * 45);
+    const delay = 0;
     
     await new Promise(r => setTimeout(r, delay));
     
@@ -258,7 +258,7 @@ function gameLoopHuman(): void {
   }
   
   const speed = parseInt(speedInput.value);
-  const delay = Math.max(50, 500 - speed * 45);
+  const delay = 0;
   humanInterval = window.setTimeout(gameLoopHuman, delay);
 }
 

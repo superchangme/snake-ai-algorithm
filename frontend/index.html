@@ -10,7 +10,16 @@
   <div class="container">
     <h1>贪吃蛇游戏</h1>
 
-    <div class="control-panel">
+    <div class="settings-header">
+      <button class="settings-toggle" id="settings-toggle">⚙️ 显示设置</button>
+      <div class="settings-summary" id="settings-summary">
+        <span id="summary-mode">AI</span>
+        <span id="summary-map">10×10</span>
+        <span id="summary-speed" style="display:none">速度3</span>
+      </div>
+    </div>
+    
+    <div class="control-panel" id="control-panel">
       <div class="control-row">
         <div class="control-group">
           <label for="map-size">地图尺寸 (5-30):</label>
@@ -20,8 +29,8 @@
 
         <div class="control-group">
           <label for="speed">速度:</label>
-          <input type="range" id="speed" min="1" max="10" value="10">
-          <span id="speed-display">10</span>
+          <input type="range" id="speed" min="1" max="10" value="3">
+          <span id="speed-display">3</span>
         </div>
       </div>
 
@@ -37,12 +46,13 @@
         <div class="control-group">
           <label>游戏模式:</label>
           <div class="mode-buttons">
-            <button id="human-mode" class="mode-btn">人类</button>
-            <button id="ai-mode" class="mode-btn active">AI</button>
+            <button id="human-mode" class="mode-btn active">人类</button>
+            <button id="ai-mode" class="mode-btn">AI</button>
           </div>
         </div>
       </div>
 
+      <!-- PC 端操作按钮 -->
       <div class="action-buttons">
         <button id="start-btn" class="btn primary">开始</button>
         <button id="pause-btn" class="btn secondary" disabled>暂停</button>
@@ -51,14 +61,35 @@
     </div>
 
     <div class="game-info">
-      <div class="info-item"><span class="label">状态:</span><span id="game-status" class="value">未开始</span></div>
-      <div class="info-item"><span class="label">分数:</span><span id="score" class="value">0</span></div>
-      <div class="info-item"><span class="label">步数:</span><span id="steps" class="value">0</span></div>
-      <div class="info-item"><span class="label">AI:</span><span id="ai-status" class="value">-</span></div>
+      <div class="info-item"><span class="label">状态</span><span id="game-status" class="value">未开始</span></div>
+      <div class="info-item"><span class="label">分数</span><span id="score" class="value">0</span></div>
+      <div class="info-item"><span class="label">步数</span><span id="steps" class="value">0</span></div>
+      <div class="info-item"><span class="label">AI</span><span id="ai-status" class="value">-</span></div>
     </div>
 
-    <div class="game-container">
-      <canvas id="game-canvas"></canvas>
+    <div class="game-area">
+      <div class="game-container">
+        <canvas id="game-canvas"></canvas>
+      </div>
+      
+      <!-- 移动端手柄 -->
+      <div class="gamepad" id="gamepad">
+        <div class="gamepad-inner">
+          <button class="action-btn start-btn" id="start-btn-mobile">▶</button>
+          <button class="action-btn pause-btn" id="pause-btn-mobile" style="display:none">⏸</button>
+          <div class="dpad-disc">
+            <div class="dpad-btn dpad-up" data-dir="up">▲</div>
+            <div class="dpad-btn dpad-left" data-dir="left">◀</div>
+            <div class="dpad-btn dpad-down" data-dir="down">▼</div>
+            <div class="dpad-btn dpad-right" data-dir="right">▶</div>
+          </div>
+          <button class="action-btn reset-btn" id="reset-btn-mobile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

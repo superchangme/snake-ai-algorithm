@@ -190,12 +190,6 @@ export class AIController {
     width: number,
     height: number
   ): Promise<Direction> {
-    // 限流：每 50ms 最多一次请求
-    const now = Date.now();
-    if (now - this.lastRequestTime < 50) {
-      return this.cachedDirection;
-    }
-    this.lastRequestTime = now;
 
     try {
       const response = await fetch(`${this.apiUrl}/api`, {
