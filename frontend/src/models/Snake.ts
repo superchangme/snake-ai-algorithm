@@ -7,13 +7,13 @@ export class Snake {
   growPending: number = 0;
 
   constructor(startX: number, startY: number, length: number = 3) {
-    // Default direction is RIGHT (1,0), so body extends in opposite direction (LEFT, x-1, x-2...)
-    this.direction = { x: 1, y: 0 };
-    this.nextDirection = { x: 1, y: 0 };
+    // Default direction is DOWN (0,1), so body extends in opposite direction (UP, y-1, y-2...)
+    this.direction = { x: 0, y: 1 };
+    this.nextDirection = { x: 0, y: 1 };
     this.body = [];
     for (let i = 0; i < length; i++) {
       // Body extends in opposite direction of movement
-      this.body.push({ x: startX - i, y: startY });
+      this.body.push({ x: startX, y: startY - i });
     }
   }
 
