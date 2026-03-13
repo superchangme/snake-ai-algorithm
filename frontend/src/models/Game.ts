@@ -29,7 +29,7 @@ export class Game {
     canvas.width = width * this.cellSize;
     canvas.height = height * this.cellSize;
     
-    this.snake = new Snake(5, 5);
+    this.snake = new Snake(3, 2);
     this.food = new Food(0, 0);
     this.obstacles = new Set();
     

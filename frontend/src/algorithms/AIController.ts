@@ -16,6 +16,7 @@ export class AIController {
   private wsQueue: Array<() => Promise<void>> = [];
   private lastRequestTime: number = 0;
   private cachedDirection: Direction = { x: 0, y: 1 };
+  private pendingResolve: ((dir: Direction) => void) | null = null;
   private requestCount: number = 0;
   private gameId: string = '';
 
@@ -93,7 +94,13 @@ export class AIController {
             this.processWsQueue();
             resolve();
           } else if (data.direction) {
-            this.cachedDirection = this.parseDirection(data.direction);
+            const direction = this.parseDirection(data.direction);
+            this.cachedDirection = direction;
+            // 如果有等待中的 Promise，调用它继续游戏循环
+            if (this.pendingResolve) {
+              this.pendingResolve(direction);
+              this.pendingResolve = null;
+            }
             this.updateAiStatus('运行中');
           }
         };
