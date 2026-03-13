@@ -47,7 +47,7 @@ let game: Game;
 let aiController: AIController | null = null;
 let isAI = false;
 let isPaused = false;
-let waitingForFirstInput = isAI ? false : true;
+let waitingForFirstInput = true;
 let gameRunning = false;
 let gameEnded = false;
 let loopId = 0;
@@ -154,6 +154,7 @@ async function startGame(): Promise<void> {
   if (isAI) {
     gameLoopAI(loopId);
   } else {
+    // 等待用户按方向键才开始移动
     gameLoopHuman();
   }
 }
@@ -196,7 +197,7 @@ async function gameLoopAI(currentLoopId: number): Promise<void> {
     }
     
     const speed = parseInt(speedInput.value);
-    const delay = 0;
+    const delay = 100;
     
     await new Promise(r => setTimeout(r, delay));
     
@@ -251,6 +252,7 @@ async function handleGameOver(): Promise<void> {
 // 人类模式
 let humanInterval: number | null = null;
 function gameLoopHuman(): void {
+  
   if (!gameRunning || isPaused || !game || gameEnded || waitingForFirstInput) return;
   
   if (!game.isRunning || game.isOver) {
@@ -258,7 +260,9 @@ function gameLoopHuman(): void {
     return;
   }
   
+  
   game.update();
+  
   updateUI();
   renderer.render(game);
   
@@ -268,7 +272,7 @@ function gameLoopHuman(): void {
   }
   
   const speed = parseInt(speedInput.value);
-  const delay = 0;
+  const delay = 100;
   humanInterval = window.setTimeout(gameLoopHuman, delay);
 }
 
@@ -414,8 +418,7 @@ document.addEventListener('keydown', (e) => {
   if (keyMap[e.key] || keyMap[e.code]) {
     if (waitingForFirstInput) {
       waitingForFirstInput = false;
-      gameRunning = true;
-      gameLoopHuman();
+      gameLoopHuman();  // Start the loop on first key press
     }
     const [dx, dy] = keyMap[e.key] || keyMap[e.code];
     game.setDirection({ x: dx, y: dy });
@@ -469,7 +472,6 @@ document.querySelectorAll('.dpad-btn').forEach(btn => {
     if (dir && dirMap[dir]) {
       if (waitingForFirstInput) {
         waitingForFirstInput = false;
-        gameRunning = true;
         gameLoopHuman();
       }
       const [dx, dy] = dirMap[dir];

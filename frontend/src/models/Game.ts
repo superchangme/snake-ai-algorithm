@@ -101,7 +101,10 @@ export class Game {
     const nextY = head.y + dir.y;
     
     // 先检查是否撞墙
+    const dirInfo = 'dir=' + JSON.stringify(dir) + ' nextDir=' + JSON.stringify(this.snake.nextDirection);
+    console.log('Check - head:', nextX, nextY, dirInfo);
     if (nextX < 0 || nextX >= this.width || nextY < 0 || nextY >= this.height) {
+      console.log('Hit wall!');
       this.isOver = true;
       this.isRunning = false;
       return;
