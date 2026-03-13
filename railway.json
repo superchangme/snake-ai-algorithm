@@ -6,6 +6,6 @@
   "deploy": {
     "numReplicas": 1,
     "restartPolicyType": "ON_FAILURE",
-    "startCommand": "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --websocket-ping-interval 20 --websocket-ping-timeout 20"
+    "startCommand": "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --ws-ping-interval 20 --ws-ping-timeout 20"
   }
 }
