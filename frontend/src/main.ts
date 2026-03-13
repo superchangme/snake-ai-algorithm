@@ -358,6 +358,7 @@ httpModeBtn.addEventListener('click', () => {
   const url = new URL(window.location.href);
   url.searchParams.set('mode', 'http');
   window.history.replaceState({}, '', url);
+});
 
 wsModeBtn.addEventListener('click', () => {
   if (aiController) {
@@ -369,7 +370,7 @@ wsModeBtn.addEventListener('click', () => {
   const url = new URL(window.location.href);
   url.searchParams.set('mode', 'ws');
   window.history.replaceState({}, '', url);
-});});
+});
 
 aiModeBtn.addEventListener('click', () => {
   isAI = true;
