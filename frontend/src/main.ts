@@ -31,11 +31,15 @@ if (modeParam === 'ws') {
   wsModeBtn.classList.remove('active');
 }
 
+// 默认人类模式激活
+humanModeBtn.classList.add('active');
+aiModeBtn.classList.remove('active');
+
 const aiStatusEl = document.getElementById('ai-status')!;
 
 let game: Game;
 let aiController: AIController | null = null;
-let isAI = true;
+let isAI = false;
 let isPaused = false;
 let waitingForFirstInput = isAI ? false : true;
 let gameRunning = false;
@@ -340,6 +344,13 @@ startBtn.addEventListener('click', async () => {
 
 pauseBtn.addEventListener('click', togglePause);
 resetBtn.addEventListener('click', resetGame);
+
+// 设置面板折叠/展开
+const settingsToggle = document.getElementById('settings-toggle') as HTMLButtonElement;
+const controlPanel = document.getElementById('control-panel') as HTMLDivElement;
+settingsToggle.addEventListener('click', () => {
+  controlPanel.classList.toggle('expanded');
+});
 
 humanModeBtn.addEventListener('click', () => {
   isAI = false;
