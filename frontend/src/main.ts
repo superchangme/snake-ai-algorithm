@@ -185,6 +185,15 @@ async function gameLoopAI(currentLoopId: number): Promise<void> {
           game.getFood(),
           game.getGridSize().width, game.getGridSize().height
         );
+        
+        // 高亮AI当前方向对应的按钮
+        const dirBtnMap: Record<string, string> = {
+          '0,-1': 'dpad-up', '0,1': 'dpad-down', '-1,0': 'dpad-left', '1,0': 'dpad-right'
+        };
+        const dirKey = direction.x + ',' + direction.y;
+        document.querySelectorAll('.dpad-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.querySelector('.' + dirBtnMap[dirKey]);
+        if (activeBtn) activeBtn.classList.add('active');
       } catch (e) {
         console.error('getNextDirection error:', e);
       }

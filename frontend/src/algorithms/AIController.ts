@@ -31,10 +31,12 @@ export class AIController {
     
     // 确定 URL
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
+    // 开发环境连接 8080 端口，生产环境用当前端口
+    const isDev = window.location.port === '3000';
+    const host = isDev ? 'localhost:8080' : window.location.host;
     // WebSocket 路径为 /ws
     this.wsUrl = `${protocol}//${host}/ws`;
-    this.apiUrl = window.location.origin;
+    this.apiUrl = isDev ? 'http://localhost:8080' : window.location.origin;
   }
 
   setMode(mode: ConnectionMode): void {
