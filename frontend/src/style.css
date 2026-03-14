@@ -254,22 +254,26 @@ input[type="range"] {
 
 /* Speed Control */
 .speed-group {
+  display: flex !important;
   flex-direction: row !important;
-  align-items: center;
-  justify-content: space-between;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px;
 }
 
 .speed-control {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 8px;
 }
 
 /* Map Size Control */
 .map-size-group {
+  display: flex !important;
   flex-direction: row !important;
-  align-items: center;
-  justify-content: space-between;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px;
 }
 
 .map-size-control {
@@ -577,22 +581,26 @@ input[type="range"] {
 
 /* Speed Control */
 .speed-group {
+  display: flex !important;
   flex-direction: row !important;
-  align-items: center;
-  justify-content: space-between;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px;
 }
 
 .speed-control {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 8px;
 }
 
 /* Map Size Control */
 .map-size-group {
+  display: flex !important;
   flex-direction: row !important;
-  align-items: center;
-  justify-content: space-between;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px;
 }
 
 .map-size-control {
