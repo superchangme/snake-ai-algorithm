@@ -315,6 +315,14 @@ input[type="range"] {
   text-align: center;
 }
 
+#speed-display {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  min-width: 30px;
+  text-align: center;
+}
+
 
 /* Mobile */
 @media (max-width: 600px) {
@@ -330,6 +338,11 @@ input[type="range"] {
   /* 速度控制保持显示 */
   #speed-display {
     display: block;
+    min-width: 30px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
   }
   }
 
@@ -642,6 +655,14 @@ input[type="range"] {
   text-align: center;
 }
 
+#speed-display {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  min-width: 30px;
+  text-align: center;
+}
+
 
 /* Mobile */
 @media (max-width: 600px) {
@@ -657,6 +678,11 @@ input[type="range"] {
   /* 速度控制保持显示 */
   #speed-display {
     display: block;
+    min-width: 30px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
   }
   }
 
