@@ -213,11 +213,7 @@ export class AIController {
         game_id: this.gameId
       });
 
-      // 超时返回缓存方向
-      setTimeout(() => {
-        this.ws?.removeEventListener('message', messageHandler);
-        resolve(this.cachedDirection);
-      }, 100);
+
     });
   }
 
