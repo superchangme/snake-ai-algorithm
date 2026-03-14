@@ -54,14 +54,30 @@ if (modeParam === 'ws') {
   wsModeBtn.classList.remove('active');
 }
 
-// AI 模式 URL 参数
-if (aiParam) {
-  aiModeBtn.click();
+// 默认人类模式激活
+if (!aiParam) {
+  humanModeBtn.classList.add('active');
+  aiModeBtn.classList.remove('active');
 }
 
-// 默认人类模式激活
-humanModeBtn.classList.add('active');
-aiModeBtn.classList.remove('active');
+// AI 模式 URL 参数 - 直接设置类和变量（避免事件监听器未绑定问题）
+if (aiParam) {
+  isAI = true;
+  aiModeBtn.classList.add('active');
+  humanModeBtn.classList.remove('active');
+  const summaryMode = document.getElementById('summary-mode');
+  if (summaryMode) summaryMode.textContent = 'AI';
+  httpModeBtn.disabled = false;
+  wsModeBtn.disabled = false;
+  httpModeBtn.style.opacity = '1';
+  wsModeBtn.style.opacity = '1';
+  // 隐藏速度控制
+  const speedGroup = speedInput.parentElement;
+  if (speedGroup) speedGroup.style.display = 'none';
+  const summarySpeed = document.getElementById('summary-speed');
+  if (summarySpeed) summarySpeed.style.display = 'none';
+  resetGame();
+}
 
 // 更新顶部显示
 const summaryMode = document.getElementById('summary-mode') as HTMLSpanElement;

@@ -34,10 +34,14 @@
           <input type="number" id="map-size" min="5" max="30" value="10" style="display:none">
         </div>
 
-        <div class="control-group">
-          <label for="speed" class="speed-label">速度:</label>
-          <input type="range" id="speed" min="1" max="10" value="3">
-          <span id="speed-display">3</span>
+        <div class="control-group speed-group">
+          <label>速度</label>
+          <div class="speed-control">
+            <button type="button" class="size-btn" id="speed-dec">−</button>
+            <span id="speed-display">3</span>
+            <button type="button" class="size-btn" id="speed-inc">+</button>
+          </div>
+          <input type="range" id="speed" min="1" max="10" value="3" style="display:none">
         </div>
       </div>
 
