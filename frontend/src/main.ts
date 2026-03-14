@@ -419,6 +419,11 @@ humanModeBtn.addEventListener('click', () => {
   aiModeBtn.classList.remove('active');
   const summaryMode = document.getElementById('summary-mode');
   if (summaryMode) summaryMode.textContent = '人类';
+  // 人类模式下禁用连接模式
+  httpModeBtn.disabled = true;
+  wsModeBtn.disabled = true;
+  httpModeBtn.style.opacity = '0.5';
+  wsModeBtn.style.opacity = '0.5';
   resetGame();
 });
 
