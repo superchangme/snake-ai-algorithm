@@ -251,12 +251,82 @@ input[type="range"] {
   transform: translateY(-50%);
 }
 
+
+/* Speed Control */
+.speed-group {
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Map Size Control */
+.map-size-group {
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.map-size-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.size-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.size-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.size-btn:active {
+  transform: scale(0.95);
+}
+
+#map-size-display {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  min-width: 30px;
+  text-align: center;
+}
+
+
 /* Mobile */
 @media (max-width: 600px) {
   .gamepad {
     display: block;
   }
   
+  /* 隐藏顶部操作按钮 */
+  .action-buttons {
+    display: none !important;
+  }
+  
+  /* 速度控制保持显示 */
+  #speed-display {
+    display: block;
+  }
   }
 
 .dpad {
@@ -504,12 +574,82 @@ input[type="range"] {
   transform: translateY(-50%) translateZ(2px) scale(0.95);
 }
 
+
+/* Speed Control */
+.speed-group {
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Map Size Control */
+.map-size-group {
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.map-size-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.size-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.size-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.size-btn:active {
+  transform: scale(0.95);
+}
+
+#map-size-display {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  min-width: 30px;
+  text-align: center;
+}
+
+
 /* Mobile */
 @media (max-width: 600px) {
   .gamepad {
     display: block;
   }
   
+  /* 隐藏顶部操作按钮 */
+  .action-buttons {
+    display: none !important;
+  }
+  
+  /* 速度控制保持显示 */
+  #speed-display {
+    display: block;
+  }
   }
 
 

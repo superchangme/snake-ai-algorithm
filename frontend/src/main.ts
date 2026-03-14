@@ -6,7 +6,28 @@ const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
 let renderer: Renderer;
 
 const mapSizeInput = document.getElementById('map-size') as HTMLInputElement;
+const sizeDecBtn = document.getElementById('size-dec') as HTMLButtonElement;
+const sizeIncBtn = document.getElementById('size-inc') as HTMLButtonElement;
 const mapSizeDisplay = document.getElementById('map-size-display')!;
+
+// 地图尺寸 +/- 按钮
+let currentSize = 10;
+sizeDecBtn.addEventListener('click', () => {
+  if (currentSize > 5) {
+    currentSize--;
+    mapSizeDisplay.textContent = String(currentSize);
+    mapSizeInput.value = String(currentSize);
+    resetGame();
+  }
+});
+sizeIncBtn.addEventListener('click', () => {
+  if (currentSize < 30) {
+    currentSize++;
+    mapSizeDisplay.textContent = String(currentSize);
+    mapSizeInput.value = String(currentSize);
+    resetGame();
+  }
+});
 const speedInput = document.getElementById('speed') as HTMLInputElement;
 const speedDisplay = document.getElementById('speed-display')!;
 const startBtn = document.getElementById('start-btn') as HTMLButtonElement;
@@ -23,12 +44,19 @@ const stepsEl = document.getElementById('steps')!;
 // 根据 URL 参数初始化连接模式按钮状态
 const urlParams = new URLSearchParams(window.location.search);
 const modeParam = urlParams.get('mode');
+const aiParam = urlParams.get('ai') === 'true';
+
 if (modeParam === 'ws') {
   wsModeBtn.classList.add('active');
   httpModeBtn.classList.remove('active');
 } else {
   httpModeBtn.classList.add('active');
   wsModeBtn.classList.remove('active');
+}
+
+// AI 模式 URL 参数
+if (aiParam) {
+  aiModeBtn.click();
 }
 
 // 默认人类模式激活

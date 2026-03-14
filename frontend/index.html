@@ -24,14 +24,18 @@
     
     <div class="control-panel" id="control-panel">
       <div class="control-row">
-        <div class="control-group">
-          <label for="map-size">地图尺寸 (5-30):</label>
-          <input type="number" id="map-size" min="5" max="30" value="10">
-          <span id="map-size-display">10 x 10</span>
+        <div class="control-group map-size-group">
+          <label>地图尺寸</label>
+          <div class="map-size-control">
+            <button type="button" class="size-btn" id="size-dec">−</button>
+            <span id="map-size-display">10</span>
+            <button type="button" class="size-btn" id="size-inc">+</button>
+          </div>
+          <input type="number" id="map-size" min="5" max="30" value="10" style="display:none">
         </div>
 
         <div class="control-group">
-          <label for="speed">速度:</label>
+          <label for="speed" class="speed-label">速度:</label>
           <input type="range" id="speed" min="1" max="10" value="3">
           <span id="speed-display">3</span>
         </div>
