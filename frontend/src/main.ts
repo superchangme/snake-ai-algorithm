@@ -44,7 +44,6 @@ const stepsEl = document.getElementById('steps')!;
 // 根据 URL 参数初始化连接模式按钮状态
 const urlParams = new URLSearchParams(window.location.search);
 const modeParam = urlParams.get('mode');
-const aiParam = urlParams.get('ai') === 'true';
 
 if (modeParam === 'ws') {
   wsModeBtn.classList.add('active');
@@ -52,31 +51,6 @@ if (modeParam === 'ws') {
 } else {
   httpModeBtn.classList.add('active');
   wsModeBtn.classList.remove('active');
-}
-
-// 默认人类模式激活
-if (!aiParam) {
-  humanModeBtn.classList.add('active');
-  aiModeBtn.classList.remove('active');
-}
-
-// AI 模式 URL 参数 - 直接设置类和变量（避免事件监听器未绑定问题）
-if (aiParam) {
-  isAI = true;
-  aiModeBtn.classList.add('active');
-  humanModeBtn.classList.remove('active');
-  const summaryMode = document.getElementById('summary-mode');
-  if (summaryMode) summaryMode.textContent = 'AI';
-  httpModeBtn.disabled = false;
-  wsModeBtn.disabled = false;
-  httpModeBtn.style.opacity = '1';
-  wsModeBtn.style.opacity = '1';
-  // 隐藏速度控制
-  const speedGroup = speedInput.parentElement;
-  if (speedGroup) speedGroup.style.display = 'none';
-  const summarySpeed = document.getElementById('summary-speed');
-  if (summarySpeed) summarySpeed.style.display = 'none';
-  resetGame();
 }
 
 // 更新顶部显示
@@ -142,8 +116,9 @@ function initFromURL(): void {
   if (size) {
     const gridSize = parseInt(size);
     if (gridSize >= 5 && gridSize <= 30) {
+      currentSize = gridSize;
       mapSizeInput.value = size;
-      mapSizeDisplay.textContent = `${gridSize} x ${gridSize}`;
+      mapSizeDisplay.textContent = `${gridSize}`;
     }
   }
   
@@ -154,6 +129,26 @@ function initFromURL(): void {
   }
     humanModeBtn.classList.remove('active');
     aiModeBtn.classList.add('active');
+  }
+  
+  // 处理 ai 参数
+  const aiParam = params.get('ai') === 'true';
+  if (aiParam) {
+    isAI = true;
+    aiModeBtn.classList.add('active');
+    humanModeBtn.classList.remove('active');
+    const summaryMode = document.getElementById('summary-mode');
+    if (summaryMode) summaryMode.textContent = 'AI';
+    // 启用连接模式
+    httpModeBtn.disabled = false;
+    wsModeBtn.disabled = false;
+    httpModeBtn.style.opacity = '1';
+    wsModeBtn.style.opacity = '1';
+    // 隐藏速度控制
+    const speedGroup = speedInput.parentElement;
+    if (speedGroup) speedGroup.style.display = 'none';
+    const summarySpeed = document.getElementById('summary-speed');
+    if (summarySpeed) summarySpeed.style.display = 'none';
   }
   
   initCanvas();
@@ -463,11 +458,6 @@ humanModeBtn.addEventListener('click', () => {
   aiModeBtn.classList.remove('active');
   const summaryMode = document.getElementById('summary-mode');
   if (summaryMode) summaryMode.textContent = '人类';
-  // 人类模式下禁用连接模式
-  httpModeBtn.disabled = true;
-  wsModeBtn.disabled = true;
-  httpModeBtn.style.opacity = '0.5';
-  wsModeBtn.style.opacity = '0.5';
   resetGame();
 });
 
