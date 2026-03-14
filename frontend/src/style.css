@@ -150,6 +150,11 @@ input[type="range"] {
   cursor: not-allowed;
 }
 
+.btn:active:not(:disabled) {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 /* Game Info Bar */
 .game-info {
   display: flex;
@@ -807,6 +812,11 @@ input[type="range"] {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* 触摸设备：显示手柄，隐藏PC按钮 */
