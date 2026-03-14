@@ -64,6 +64,7 @@ const aiModeBtn = document.getElementById('ai-mode') as HTMLButtonElement;
 const gameStatusEl = document.getElementById('game-status')!;
 const scoreEl = document.getElementById('score')!;
 const stepsEl = document.getElementById('steps')!;
+const connectionModeGroup = document.getElementById('connection-mode-group');
 
 // 根据 URL 参数初始化连接模式按钮状态
 const urlParams = new URLSearchParams(window.location.search);
@@ -479,6 +480,8 @@ humanModeBtn.addEventListener('click', () => {
   const summarySpeed = document.getElementById('summary-speed');
   if (summarySpeed) summarySpeed.style.display = 'inline';
   humanModeBtn.classList.add('active');
+  // 隐藏连接模式按钮
+  if (connectionModeGroup) connectionModeGroup.style.display = 'none';
   aiModeBtn.classList.remove('active');
   const summaryMode = document.getElementById('summary-mode');
   if (summaryMode) summaryMode.textContent = '人类';
@@ -523,6 +526,8 @@ aiModeBtn.addEventListener('click', () => {
     wsModeBtn.classList.contains('active') ? aiController.setMode('ws') : aiController.setMode('http');
   }
   aiModeBtn.classList.add('active');
+  // 显示连接模式按钮
+  if (connectionModeGroup) connectionModeGroup.style.display = 'flex';
   humanModeBtn.classList.remove('active');
   resetGame();
 });
@@ -597,3 +602,10 @@ document.querySelectorAll('.dpad-btn').forEach(btn => {
 });
 
 initFromURL();
+
+// 根据初始模式显示/隐藏连接模式按钮
+if (humanModeBtn.classList.contains('active')) {
+  if (connectionModeGroup) connectionModeGroup.style.display = 'none';
+} else if (aiModeBtn.classList.contains('active')) {
+  if (connectionModeGroup) connectionModeGroup.style.display = 'flex';
+}
