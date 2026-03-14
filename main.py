@@ -180,14 +180,23 @@ async def websocket_endpoint(websocket: WebSocket):
 # ============ 静态文件服务 ============
 
 # 使用 FastAPI StaticFiles 更可靠地服务静态文件
-app.mount("/assets", StaticFiles(directory=os.path.join(DIST_DIR, "assets")), name="assets")
+# 只在 dist 存在时挂载静态文件（生产模式）
+if os.path.exists(os.path.join(DIST_DIR, "assets")):
+    app.mount("/assets", StaticFiles(directory=os.path.join(DIST_DIR, "assets")), name="assets")
+else:
+    # dev 模式：静默跳过静态文件（前端独立运行在 3000）
+    pass
 
 
 @app.get("/")
 async def serve_index():
-    """服务 index.html"""
+    """服务 index.html（仅生产模式需要）"""
     index_path = os.path.join(DIST_DIR, "index.html")
-    return FileResponse(index_path, media_type="text/html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path, media_type="text/html")
+    else:
+        # dev 模式：返回简单消息
+        return {"message": "API Running - use frontend on port 3000"}
 
 
 @app.get("/{path:path}")
