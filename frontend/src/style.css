@@ -552,7 +552,7 @@ input[type="range"] {
 }
 
 .dpad-up {
-  top: 8px;
+  top: 24px;
   left: 50%;
   transform: translateX(-50%) translateZ(5px);
 }
@@ -562,7 +562,7 @@ input[type="range"] {
 }
 
 .dpad-down {
-  bottom: 8px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%) translateZ(5px);
 }
@@ -573,7 +573,7 @@ input[type="range"] {
 
 .dpad-left {
   top: 50%;
-  left: 8px;
+  left: 24px;
   transform: translateY(-50%) translateZ(5px);
 }
 
@@ -583,7 +583,7 @@ input[type="range"] {
 
 .dpad-right {
   top: 50%;
-  right: 8px;
+  right: 24px;
   transform: translateY(-50%) translateZ(5px);
 }
 
