@@ -31,23 +31,29 @@ export class AIController {
       this.mode = 'ws';
     }
     
+    // forceProd=true: 强制连生产（用于本地测试线上）
+    const forceProd = new URLSearchParams(window.location.search).get('forceProd') === 'true';
+
     // 确定 URL
     // 开发环境：HTTP 走 Vite 代理（相对路径），WS 用 hostname:port 构建
     // 生产环境：用当前 origin
     const isDev = window.location.port === '3000';
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     
-    if (isDev) {
+    if (forceProd) {
+      // 强制连生产
+      this.apiUrl = '';
+      this.wsUrl = 'wss://snake-ai-algorithm-production.up.railway.app/ws';
+    } else if (isDev) {
       // 开发环境：HTTP 走代理（相对路径），WS 用 hostname:port
       this.apiUrl = '';  // 空字符串 = 相对路径
-      this.wsUrl = `ws://localhost:8080/ws`;
+      this.wsUrl = `${protocol}//${window.location.hostname}:8080/ws`;
     } else {
       // 生产环境：同源
       this.apiUrl = window.location.origin;
       this.wsUrl = `${protocol}//${window.location.host}/ws`;
     }
   }
-
   setMode(mode: ConnectionMode): void {
     this.mode = mode;
     console.log('[AI] Connection mode:', mode);
