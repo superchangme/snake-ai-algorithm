@@ -23,26 +23,27 @@ const mapSizeInput = document.getElementById('map-size') as HTMLInputElement;
 const sizeDecBtn = document.getElementById('size-dec') as HTMLButtonElement;
 const sizeIncBtn = document.getElementById('size-inc') as HTMLButtonElement;
 const mapSizeDisplay = document.getElementById('map-size-display')!;
+const summaryMap = document.getElementById('summary-map');
 
 // 地图尺寸 +/- 按钮
 let currentSize = 10;
-sizeDecBtn.addEventListener('click', () => { this.disabled = true;
+sizeDecBtn.addEventListener('click', () => {
   if (currentSize > 5) {
     currentSize--;
     mapSizeDisplay.textContent = String(currentSize);
     mapSizeInput.value = String(currentSize);
+    if (summaryMap) summaryMap.textContent = currentSize + '×' + currentSize;
     resetGame();
   }
-
 });
-sizeIncBtn.addEventListener('click', () => { this.disabled = true;
+sizeIncBtn.addEventListener('click', () => {
   if (currentSize < 30) {
     currentSize++;
     mapSizeDisplay.textContent = String(currentSize);
     mapSizeInput.value = String(currentSize);
+    if (summaryMap) summaryMap.textContent = currentSize + '×' + currentSize;
     resetGame();
   }
-
 });
 const speedInput = document.getElementById('speed') as HTMLInputElement;
 const speedDisplay = document.getElementById('speed-display')!;
