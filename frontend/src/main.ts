@@ -165,6 +165,7 @@ function initFromURL(): void {
       currentSize = gridSize;
       mapSizeInput.value = size;
       mapSizeDisplay.textContent = `${gridSize}`;
+      if (summaryMap) summaryMap.textContent = gridSize + '×' + gridSize;
     }
   }
 
