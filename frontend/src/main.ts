@@ -1,3 +1,4 @@
+
 import { Game } from './models/Game';
 import { AIController } from './algorithms/AIController';
 import { Renderer } from './renderer';
@@ -699,6 +700,7 @@ document.querySelectorAll('.dpad-btn').forEach(btn => {
 
 // Initialize name from localStorage
 const initNameInput = () => {
+  
 
   const nameInput = document.getElementById('history-name');
   const summaryName = document.getElementById('summary-name');
