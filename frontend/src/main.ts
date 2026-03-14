@@ -30,6 +30,30 @@ sizeIncBtn.addEventListener('click', () => {
 });
 const speedInput = document.getElementById('speed') as HTMLInputElement;
 const speedDisplay = document.getElementById('speed-display')!;
+const speedDecBtn = document.getElementById('speed-dec') as HTMLButtonElement;
+const speedIncBtn = document.getElementById('speed-inc') as HTMLButtonElement;
+let currentSpeed = 3;
+
+// 速度 +/- 按钮事件
+speedDecBtn.addEventListener('click', () => {
+  if (currentSpeed > 1) {
+    currentSpeed--;
+    speedDisplay.textContent = String(currentSpeed);
+    speedInput.value = String(currentSpeed);
+    const summarySpeed = document.getElementById('summary-speed');
+    if (summarySpeed) summarySpeed.textContent = '速度' + currentSpeed;
+  }
+});
+speedIncBtn.addEventListener('click', () => {
+  if (currentSpeed < 10) {
+    currentSpeed++;
+    speedDisplay.textContent = String(currentSpeed);
+    speedInput.value = String(currentSpeed);
+    const summarySpeed = document.getElementById('summary-speed');
+    if (summarySpeed) summarySpeed.textContent = '速度' + currentSpeed;
+  }
+});
+
 const startBtn = document.getElementById('start-btn') as HTMLButtonElement;
 const pauseBtn = document.getElementById('pause-btn') as HTMLButtonElement;
 const resetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
@@ -449,8 +473,8 @@ settingsToggle.addEventListener('click', () => {
 humanModeBtn.addEventListener('click', () => {
   isAI = false;
   // 显示速度控制
-  const speedGroup = speedInput.parentElement;
-  if (speedGroup) speedGroup.style.display = 'block';
+  const speedGroup = document.querySelector('.speed-group');
+  if (speedGroup) (speedGroup as HTMLElement).style.display = 'flex';
   // 显示顶部速度
   const summarySpeed = document.getElementById('summary-speed');
   if (summarySpeed) summarySpeed.style.display = 'inline';
@@ -487,9 +511,9 @@ wsModeBtn.addEventListener('click', () => {
 
 aiModeBtn.addEventListener('click', () => {
   isAI = true;
-  // 隐藏速度控制
-  const speedGroup = speedInput.parentElement;
-  if (speedGroup) speedGroup.style.display = 'none';
+  // 隐藏速度控制（使用 class 选择）
+  const speedGroup = document.querySelector('.speed-group');
+  if (speedGroup) (speedGroup as HTMLElement).style.display = 'none';
   // 隐藏顶部速度显示
   const summarySpeed = document.getElementById('summary-speed');
   if (summarySpeed) summarySpeed.style.display = 'none';
