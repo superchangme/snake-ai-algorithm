@@ -40,7 +40,7 @@ export class AIController {
     if (isDev) {
       // 开发环境：HTTP 走代理（相对路径），WS 用 hostname:port
       this.apiUrl = '';  // 空字符串 = 相对路径
-      this.wsUrl = `${protocol}//${window.location.hostname}:8080/ws`;
+      this.wsUrl = `ws://localhost:8080/ws`;
     } else {
       // 生产环境：同源
       this.apiUrl = window.location.origin;
