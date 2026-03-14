@@ -2,6 +2,20 @@ import { Game } from './models/Game';
 import { AIController } from './algorithms/AIController';
 import { Renderer } from './renderer';
 
+// Re-enable all setting buttons
+function reenableSettingButtons(): void {
+  sizeDecBtn.disabled = false;
+  sizeIncBtn.disabled = false;
+  speedDecBtn.disabled = false;
+  speedIncBtn.disabled = false;
+  humanModeBtn.disabled = false;
+  aiModeBtn.disabled = false;
+  httpModeBtn.disabled = false;
+  wsModeBtn.disabled = false;
+}
+
+
+
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
 let renderer: Renderer;
 
@@ -12,21 +26,23 @@ const mapSizeDisplay = document.getElementById('map-size-display')!;
 
 // 地图尺寸 +/- 按钮
 let currentSize = 10;
-sizeDecBtn.addEventListener('click', () => {
+sizeDecBtn.addEventListener('click', () => { this.disabled = true;
   if (currentSize > 5) {
     currentSize--;
     mapSizeDisplay.textContent = String(currentSize);
     mapSizeInput.value = String(currentSize);
     resetGame();
   }
+
 });
-sizeIncBtn.addEventListener('click', () => {
+sizeIncBtn.addEventListener('click', () => { this.disabled = true;
   if (currentSize < 30) {
     currentSize++;
     mapSizeDisplay.textContent = String(currentSize);
     mapSizeInput.value = String(currentSize);
     resetGame();
   }
+
 });
 const speedInput = document.getElementById('speed') as HTMLInputElement;
 const speedDisplay = document.getElementById('speed-display')!;
@@ -35,7 +51,7 @@ const speedIncBtn = document.getElementById('speed-inc') as HTMLButtonElement;
 let currentSpeed = 3;
 
 // 速度 +/- 按钮事件
-speedDecBtn.addEventListener('click', () => {
+speedDecBtn.addEventListener('click', () => { this.disabled = true;
   if (currentSpeed > 1) {
     currentSpeed--;
     speedDisplay.textContent = String(currentSpeed);
@@ -43,8 +59,9 @@ speedDecBtn.addEventListener('click', () => {
     const summarySpeed = document.getElementById('summary-speed');
     if (summarySpeed) summarySpeed.textContent = '速度' + currentSpeed;
   }
+
 });
-speedIncBtn.addEventListener('click', () => {
+speedIncBtn.addEventListener('click', () => { this.disabled = true;
   if (currentSpeed < 10) {
     currentSpeed++;
     speedDisplay.textContent = String(currentSpeed);
@@ -52,6 +69,7 @@ speedIncBtn.addEventListener('click', () => {
     const summarySpeed = document.getElementById('summary-speed');
     if (summarySpeed) summarySpeed.textContent = '速度' + currentSpeed;
   }
+
 });
 
 const startBtn = document.getElementById('start-btn') as HTMLButtonElement;
@@ -114,6 +132,7 @@ function initCanvas(): void {
   if (!renderer) {
     renderer = new Renderer(canvas);
   }
+
   renderer.setCellSize(cellSize);
 }
 
@@ -125,6 +144,7 @@ function renderInitialState(): void {
     initCanvas();
     game = new Game(canvas, gridSize, gridSize);
   }
+
   
   renderer.render(game);
   gameStatusEl.textContent = '未开始';
@@ -146,15 +166,18 @@ function initFromURL(): void {
       mapSizeDisplay.textContent = `${gridSize}`;
     }
   }
+
   
   if (algorithm === 'api') {
     isAI = true;
   if (aiController) {
     wsModeBtn.classList.contains('active') ? aiController.setMode('ws') : aiController.setMode('http');
   }
+
     humanModeBtn.classList.remove('active');
     aiModeBtn.classList.add('active');
   }
+
   
   // 处理 ai 参数
   const aiParam = params.get('ai') === 'true';
@@ -175,6 +198,7 @@ function initFromURL(): void {
     const summarySpeed = document.getElementById('summary-speed');
     if (summarySpeed) summarySpeed.style.display = 'none';
   }
+
   
   initCanvas();
   renderInitialState();
@@ -196,6 +220,7 @@ function updateUI(): void {
   } catch (e) {
     console.error('updateUI error:', e);
   }
+
 }
 
 async function startGame(): Promise<void> {
@@ -210,6 +235,7 @@ async function startGame(): Promise<void> {
   if (!aiController) {
     aiController = new AIController(gridSize, gridSize);
   }
+
   if (isAI && aiController) {
     try {
       await aiController.init(game.getSnake());
@@ -217,6 +243,7 @@ async function startGame(): Promise<void> {
       console.error('AI init failed:', e);
     }
   }
+
   
   game.start();
   gameRunning = true;
@@ -232,6 +259,7 @@ async function startGame(): Promise<void> {
     updateDirectionDisplay(initDir);
     gameLoopHuman();
   }
+
 }
 
 // AI模式
@@ -313,13 +341,16 @@ async function gameLoopAI(currentLoopId: number): Promise<void> {
   } catch (e) {
     console.error('gameLoopAI error:', e);
     gameRunning = false;
+  reenableSettingButtons();
   }
+
 }
 
 async function handleGameOver(): Promise<void> {
   if (gameEnded) return;
   gameEnded = true;
   gameRunning = false;
+  reenableSettingButtons();
   loopId++;
   
   try {
@@ -347,10 +378,14 @@ async function handleGameOver(): Promise<void> {
   } catch (e) {
     console.error('handleGameOver error:', e);
   }
+
   
   renderer.render(game);
   startBtn.disabled = false;
+  startBtn.textContent = '开始';
   pauseBtn.disabled = true;
+  pauseBtn.textContent = '暂停';
+  setControlsEnabled(true);
 }
 
 // 人类模式
@@ -363,6 +398,7 @@ function gameLoopHuman(): void {
     handleGameOverHuman();
     return;
   }
+
   
   
   game.update();
@@ -374,6 +410,7 @@ function gameLoopHuman(): void {
     handleGameOverHuman();
     return;
   }
+
   
   const speed = parseInt(speedInput.value);
   const delay = Math.max(50, 500 - speed * 45);  // Speed 1=455ms, 5=275ms, 10=50ms
@@ -384,20 +421,26 @@ function handleGameOverHuman(): void {
   if (gameEnded) return;
   gameEnded = true;
   gameRunning = false;
+  reenableSettingButtons();
   
   if (game.isWon) {
     gameStatusEl.textContent = '满分! 吃满全图!';
   } else {
     gameStatusEl.textContent = '结束! 得分: ' + game.getStats().score;
   }
+
   startBtn.disabled = false;
+  startBtn.textContent = '开始';
   pauseBtn.disabled = true;
+  pauseBtn.textContent = '暂停';
+  setControlsEnabled(true);
 }
 
 function togglePause(): void {
   if (gameEnded || !gameRunning) return;
   isPaused = !isPaused;
   pauseBtn.textContent = isPaused ? '继续' : '暂停';
+  setControlsEnabled(false);  // 游戏进行中或暂停时都禁用设置
   
   if (!isPaused && gameRunning) {
     loopId++;
@@ -407,24 +450,57 @@ function togglePause(): void {
       gameLoopHuman();
     }
   }
+
+}
+
+// 设置控件组（用于游戏进行中禁用）
+const settingsControls = [
+  sizeDecBtn, sizeIncBtn,
+  speedDecBtn, speedIncBtn,
+  humanModeBtn, aiModeBtn,
+  httpModeBtn, wsModeBtn
+];
+
+function setControlsEnabled(enabled: boolean): void {
+  const opacity = enabled ? '1' : '0.5';
+  const pointerEvents = enabled ? 'auto' : 'none';
+  
+  settingsControls.forEach(btn => {
+    (btn as HTMLElement).style.opacity = opacity;
+    (btn as HTMLElement).style.pointerEvents = pointerEvents;
+  });
 }
 
 function resetGame(): void {
   gameRunning = false;
+  reenableSettingButtons();
   gameEnded = true;
   isPaused = false;
   loopId++;
+  
+  // 恢复按钮文字
+  startBtn.disabled = false;
+  startBtn.textContent = '开始';
+  pauseBtn.disabled = true;
+  pauseBtn.textContent = '暂停';
+  
+  // 恢复设置控件
+  setControlsEnabled(true);
   
   if (humanInterval) {
     clearTimeout(humanInterval);
     humanInterval = null;
   }
+
   
   // 重新初始化画布和游戏
   const gridSize = parseInt(mapSizeInput.value);
   initCanvas();
   game = new Game(canvas, gridSize, gridSize);
-  renderer.render(game);
+  // 更新 AI controller 的尺寸
+  if (aiController) {
+    aiController.setSize(gridSize, gridSize);
+  }  renderer.render(game);
   
   gameStatusEl.textContent = '未开始';
   scoreEl.textContent = '0';
@@ -453,11 +529,13 @@ speedInput.addEventListener('input', () => {
   if (summarySpeed) {
     summarySpeed.textContent = '速度' + speedInput.value;
   }
+
 });
 
 startBtn.addEventListener('click', async () => {
   startBtn.disabled = true;
   pauseBtn.disabled = false;
+  setControlsEnabled(false);
   await startGame();
 });
 
@@ -471,7 +549,7 @@ settingsToggle.addEventListener('click', () => {
   controlPanel.classList.toggle('expanded');
 });
 
-humanModeBtn.addEventListener('click', () => {
+humanModeBtn.addEventListener('click', () => { this.disabled = true;
   isAI = false;
   // 显示速度控制
   const speedGroup = document.querySelector('.speed-group');
@@ -488,31 +566,35 @@ humanModeBtn.addEventListener('click', () => {
   resetGame();
 });
 
-httpModeBtn.addEventListener('click', () => {
+httpModeBtn.addEventListener('click', () => { this.disabled = true;
   if (aiController) {
     aiController.setMode('http');
   }
+
   httpModeBtn.classList.add('active');
   wsModeBtn.classList.remove('active');
   // Update URL without refresh
   const url = new URL(window.location.href);
   url.searchParams.set('mode', 'http');
   window.history.replaceState({}, '', url);
+  resetGame();
 });
 
-wsModeBtn.addEventListener('click', () => {
+wsModeBtn.addEventListener('click', () => { this.disabled = true;
   if (aiController) {
     aiController.setMode('ws');
   }
+
   wsModeBtn.classList.add('active');
   httpModeBtn.classList.remove('active');
   // Update URL without refresh
   const url = new URL(window.location.href);
   url.searchParams.set('mode', 'ws');
   window.history.replaceState({}, '', url);
+  resetGame();
 });
 
-aiModeBtn.addEventListener('click', () => {
+aiModeBtn.addEventListener('click', () => { this.disabled = true;
   isAI = true;
   // 隐藏速度控制（使用 class 选择）
   const speedGroup = document.querySelector('.speed-group');
@@ -525,6 +607,7 @@ aiModeBtn.addEventListener('click', () => {
   if (aiController) {
     wsModeBtn.classList.contains('active') ? aiController.setMode('ws') : aiController.setMode('http');
   }
+
   aiModeBtn.classList.add('active');
   // 显示连接模式按钮
   if (connectionModeGroup) connectionModeGroup.style.display = 'flex';
@@ -546,10 +629,12 @@ document.addEventListener('keydown', (e) => {
     game.setDirection(newDir);
     updateDirectionDisplay(newDir);
   }
+
   if (e.code === 'Space') {
     e.preventDefault();
     togglePause();
   }
+
 });
 
 // 移动端开始按钮
@@ -570,6 +655,7 @@ pauseBtnMobile.addEventListener('click', () => {
   } else {
     pauseBtnMobile.textContent = '⏸';
   }
+
 });
 
 // 移动端重置按钮

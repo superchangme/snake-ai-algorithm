@@ -63,6 +63,15 @@ export class AIController {
     return this.mode;
   }
 
+  setSize(width: number, height: number): void {
+    this.mapWidth = width;
+    this.mapHeight = height;
+    // WS 模式下需要重置连接状态，下次会自动重新 init
+    if (this.mode === 'ws') {
+      this.wsInitialized = false;
+      console.log('[AI] Size updated to', width, 'x', height, '- WS will re-init on next move');
+    }
+  }
   private async initWebSocket(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
