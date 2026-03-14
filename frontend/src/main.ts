@@ -170,8 +170,8 @@ function initFromURL(): void {
     httpModeBtn.style.opacity = '1';
     wsModeBtn.style.opacity = '1';
     // 隐藏速度控制
-    const speedGroup = speedInput.parentElement;
-    if (speedGroup) speedGroup.style.display = 'none';
+    const speedGroup = document.querySelector('.speed-group');
+    if (speedGroup) speedGroup.style.setProperty('display', 'none', 'important');
     const summarySpeed = document.getElementById('summary-speed');
     if (summarySpeed) summarySpeed.style.display = 'none';
   }
@@ -516,7 +516,7 @@ aiModeBtn.addEventListener('click', () => {
   isAI = true;
   // 隐藏速度控制（使用 class 选择）
   const speedGroup = document.querySelector('.speed-group');
-  if (speedGroup) (speedGroup as HTMLElement).style.display = 'none';
+  if (speedGroup) speedGroup.style.setProperty('display', 'none', 'important');
   // 隐藏顶部速度显示
   const summarySpeed = document.getElementById('summary-speed');
   if (summarySpeed) summarySpeed.style.display = 'none';
