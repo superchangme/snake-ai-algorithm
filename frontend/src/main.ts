@@ -425,10 +425,18 @@ function handleGameOverHuman(): void {
   gameRunning = false;
   reenableSettingButtons();
   
+  const stats = game.getStats();
   if (game.isWon) {
     gameStatusEl.textContent = '满分! 吃满全图!';
   } else {
-    gameStatusEl.textContent = '结束! 得分: ' + game.getStats().score;
+    gameStatusEl.textContent = '结束! 得分: ' + stats.score;
+  }
+
+  // Save to localStorage for human mode
+  if (!isAI) {
+    const nameInput = document.getElementById('history-name') as HTMLInputElement;
+    const playerName = nameInput?.value?.trim() || '';
+    saveGameHistory(stats.score, stats.steps, currentSize, playerName);
   }
 
   startBtn.disabled = false;
@@ -689,6 +697,93 @@ document.querySelectorAll('.dpad-btn').forEach(btn => {
   });
 });
 
+// Initialize name from localStorage
+const initNameInput = () => {
+
+  const nameInput = document.getElementById('history-name');
+  const summaryName = document.getElementById('summary-name');
+
+  const savedName = localStorage.getItem(NAME_KEY);
+  const nameDialog = document.getElementById('name-dialog');
+  
+
+
+  
+  if (savedName) {
+    if (nameInput) (nameInput as HTMLInputElement).value = savedName;
+    if (summaryName) {
+      summaryName.textContent = '👤 ' + savedName;
+      (summaryName as HTMLElement).style.display = 'inline';
+    }
+  } else if (nameDialog) {
+    // No name - show required dialog
+  
+    nameDialog.classList.add('show');
+    
+    // Get elements inside dialog
+    const requiredNameInput = document.getElementById('required-name');
+    const nameConfirm = document.getElementById('name-confirm');
+    
+    if (requiredNameInput && nameConfirm) {
+      const closeNameDialog = () => {
+        const name = (requiredNameInput as HTMLInputElement).value.trim();
+      
+        if (name) {
+          localStorage.setItem(NAME_KEY, name);
+          if (nameInput) (nameInput as HTMLInputElement).value = name;
+          if (summaryName) {
+            summaryName.textContent = '👤 ' + name;
+            (summaryName as HTMLElement).style.display = 'inline';
+          }
+          nameDialog.classList.remove('show');
+        }
+      };
+      
+      nameConfirm.addEventListener('click', closeNameDialog);
+      requiredNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') closeNameDialog();
+      });
+    }
+  }
+  
+  // Make name clickable to edit
+  if (summaryName) {
+    summaryName.addEventListener('click', () => {
+      if (summaryName.isContentEditable) return;
+      
+      const currentName = localStorage.getItem(NAME_KEY) || '';
+      summaryName.textContent = '';
+      summaryName.contentEditable = 'true';
+      summaryName.style.background = 'rgba(0, 255, 136, 0.3)';
+      summaryName.style.padding = '2px 8px';
+      summaryName.focus();
+      
+      // Select all text
+      document.execCommand('selectAll', false);
+      
+      const saveName = () => {
+        const newName = summaryName.textContent?.replace('👤 ', '').trim() || '';
+        summaryName.contentEditable = 'false';
+        summaryName.style.background = newName ? '' : 'transparent';
+        localStorage.setItem(NAME_KEY, newName);
+        summaryName.textContent = newName ? '👤 ' + newName : '';
+        summaryName.style.display = newName ? 'inline' : 'none';
+        
+        if (nameInput) nameInput.value = newName;
+      };
+      
+      summaryName.addEventListener('blur', saveName);
+      summaryName.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          summaryName.blur();
+        }
+      });
+    });
+  }
+};
+initNameInput();
+
 initFromURL();
 
 // 根据初始模式显示/隐藏连接模式按钮
@@ -696,4 +791,163 @@ if (humanModeBtn.classList.contains('active')) {
   if (connectionModeGroup) connectionModeGroup.style.display = 'none';
 } else if (aiModeBtn.classList.contains('active')) {
   if (connectionModeGroup) connectionModeGroup.style.display = 'flex';
+}
+
+
+// ========== History Functions ==========
+const HISTORY_KEY = 'snake_game_history';
+const NAME_KEY = 'snake_player_name';
+
+interface HistoryItem {
+  time: string;
+  name?: string;
+  size: number;
+  score: number;
+  steps: number;
+}
+
+function saveGameHistory(score: number, steps: number, size: number, name?: string): void {
+  const history = getGameHistory();
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  
+  history.unshift({
+    time: timeStr,
+    name: name || '',
+    size,
+    score,
+    steps
+  });
+  
+  // Keep only last 50 records
+  if (history.length > 50) {
+    history.pop();
+  }
+  
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+function getGameHistory(): HistoryItem[] {
+  try {
+    const data = localStorage.getItem(HISTORY_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+// Fake leaderboard data (will connect to backend later)
+function getLeaderboard(): Array<HistoryItem & { rank: number }> {
+  const fakeData = [
+    { rank: 1, name: '小明', size: 10, score: 97, steps: 500 },
+    { rank: 2, name: '大神', size: 10, score: 95, steps: 480 },
+    { rank: 3, name: '蛇王', size: 10, score: 90, steps: 450 },
+    { rank: 4, name: '高手', size: 10, score: 85, steps: 420 },
+    { rank: 5, name: '玩家1', size: 10, score: 80, steps: 400 },
+    { rank: 6, name: '玩家2', size: 10, score: 75, steps: 380 },
+    { rank: 7, name: '玩家3', size: 10, score: 70, steps: 350 },
+    { rank: 8, name: '玩家4', size: 10, score: 65, steps: 320 },
+  ];
+  
+  // Add current user's score if exists
+  const userHistory = getGameHistory();
+  if (userHistory.length > 0) {
+    const bestScore = Math.max(...userHistory.map(h => h.score));
+    const best = userHistory.find(h => h.score === bestScore);
+    if (best) {
+      const playerName = localStorage.getItem(NAME_KEY) || '你';
+      fakeData.push({
+        rank: 0, // Will be calculated
+        name: playerName,
+        size: best.size,
+        score: bestScore,
+        steps: best.steps
+      });
+    }
+  }
+  
+  // Sort by score and calculate ranks
+  fakeData.sort((a, b) => b.score - a.score);
+  return fakeData.map((item, index) => ({ ...item, rank: index + 1 }));
+}
+
+function renderHistory(): void {
+  const historyList = document.getElementById('history-list');
+  if (!historyList) return;
+  
+  const history = getGameHistory();
+  
+  if (history.length === 0) {
+    historyList.innerHTML = '<div class="history-empty">暂无游戏记录</div>';
+    return;
+  }
+  
+  historyList.innerHTML = history.map(item => `
+    <div class="history-item">
+      <div class="history-item-info">
+        <span class="history-item-time">${item.time} · ${item.size}×${item.size}}</span>
+        <span class="history-item-steps">步数: ${item.steps}</span>
+      </div>
+      <span class="history-item-score">${item.score}</span>
+    </div>
+  `).join('');
+}
+
+function clearHistory(): void {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+}
+
+// History dialog handlers
+const historyBtn = document.getElementById('history-btn');
+const historyDialog = document.getElementById('history-dialog');
+const historyClose = document.getElementById('history-close');
+const historyClear = document.getElementById('history-clear');
+
+if (historyBtn && historyDialog) {
+  historyBtn.addEventListener('click', () => {
+    renderHistory();
+    // Load saved name
+    const nameInput = document.getElementById('history-name') as HTMLInputElement;
+    if (nameInput) {
+      nameInput.value = localStorage.getItem(NAME_KEY) || '';
+    }
+    historyDialog.classList.add('show');
+  });
+}
+
+// Save name when changed
+const nameInput = document.getElementById('history-name') as HTMLInputElement;
+if (nameInput) {
+  nameInput.addEventListener('change', () => {
+    const name = nameInput.value.trim();
+    localStorage.setItem(NAME_KEY, name);
+    const summaryName = document.getElementById('summary-name');
+    if (summaryName) {
+      summaryName.textContent = name ? '👤 ' + name : '';
+      summaryName.style.display = name ? 'inline' : 'none';
+    }
+  });
+}
+
+if (historyClose && historyDialog) {
+  historyClose.addEventListener('click', () => {
+    historyDialog.classList.remove('show');
+  });
+}
+
+if (historyDialog) {
+  historyDialog.addEventListener('click', (e) => {
+    if (e.target === historyDialog) {
+      historyDialog.classList.remove('show');
+    }
+  });
+}
+
+if (historyClear) {
+  historyClear.addEventListener('click', () => {
+    if (confirm('确定要清空所有游戏记录吗？')) {
+      clearHistory();
+    }
+  });
 }
