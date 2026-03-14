@@ -19,9 +19,8 @@ export class Renderer {
     const { width, height } = game.getGridSize();
     this.cellSize = this.canvas.width / width;
     
-    // Clear
-    this.ctx.fillStyle = '#1a1a2e';
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    // Clear - transparent background
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
     // Draw grid
     this.ctx.strokeStyle = '#2a2a4e';
