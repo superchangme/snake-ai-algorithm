@@ -1,5 +1,5 @@
-from datetime import datetime
-from sqlalchemy import BigInteger, Integer, String, CheckConstraint
+from datetime import datetime, timezone
+from sqlalchemy import BigInteger, Integer, String, CheckConstraint, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
@@ -15,7 +15,12 @@ class GameRecord(Base):
     mode: Mapped[str] = mapped_column(String(10), nullable=False)
     connection: Mapped[str] = mapped_column(String(10), nullable=False)
     duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, 
+        default=lambda: datetime.now(timezone.utc)
+    )
+    # 扩展字段（JSONB，与迁移脚本一致）
+    metadata: Mapped[dict | None] = mapped_column(JSON, default=None)
     
     __table_args__ = (
         CheckConstraint("score >= 0", name="check_score_positive"),

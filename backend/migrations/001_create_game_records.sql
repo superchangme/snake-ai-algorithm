@@ -26,3 +26,19 @@ CREATE INDEX IF NOT EXISTS idx_game_records_leaderboard ON game_records(
     score DESC, 
     steps ASC
 );
+
+-- 覆盖索引：避免回表查询，进一步优化排行榜
+CREATE INDEX IF NOT EXISTS idx_game_records_leaderboard_covering ON game_records(
+    map_size, 
+    score DESC, 
+    steps ASC, 
+    player_name, 
+    created_at
+);
+
+-- 为高频查询的 map_size 添加部分索引（高分段）
+CREATE INDEX IF NOT EXISTS idx_game_records_top_scores ON game_records(
+    map_size, 
+    score DESC, 
+    steps ASC
+) WHERE score > 100;
