@@ -166,21 +166,16 @@ export class Renderer {
     const cx = pos.x * this.cellSize + this.cellSize / 2;
     const cy = pos.y * this.cellSize + this.cellSize / 2;
     
-    // Tail gradient - smaller and fading
-    const gradient = this.ctx.createRadialGradient(cx, cy, 0, cx, cy, this.cellSize * 0.3);
-    gradient.addColorStop(0, 'rgba(0, 255, 136, 0.8)');
-    gradient.addColorStop(0.5, 'rgba(0, 200, 100, 0.5)');
-    gradient.addColorStop(1, 'rgba(0, 150, 80, 0.2)');
-    
-    this.ctx.fillStyle = gradient;
+    // Small tail - just a dot, clearly different from body
+    this.ctx.fillStyle = '#00aa55';
     this.ctx.beginPath();
-    this.ctx.arc(cx, cy, this.cellSize * 0.3, 0, Math.PI * 2);
+    this.ctx.arc(cx, cy, this.cellSize * 0.2, 0, Math.PI * 2);
     this.ctx.fill();
     
-    // Tail tip - small bright dot
+    // Tail tip - bright small dot
     this.ctx.fillStyle = '#00ff88';
     this.ctx.beginPath();
-    this.ctx.arc(cx, cy, this.cellSize * 0.12, 0, Math.PI * 2);
+    this.ctx.arc(cx, cy, this.cellSize * 0.08, 0, Math.PI * 2);
     this.ctx.fill();
   }
 }

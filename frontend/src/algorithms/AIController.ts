@@ -326,6 +326,18 @@ export class AIController {
   }
 
 
+  // ========== Game Over Method ==========
+  gameOver(): void {
+    console.log('[AI] Game over');
+    // Close WebSocket connection on game over
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+      this.wsConnected = false;
+      this.wsInitialized = false;
+    }
+  }
+
   reset(): void {
     this.cachedDirection = { x: 0, y: 1 };
     this.requestCount = 0;

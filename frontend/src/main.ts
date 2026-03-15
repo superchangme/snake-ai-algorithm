@@ -197,6 +197,9 @@ const aiStatusEl = document.getElementById('ai-status')!;
 
 let game: Game;
 let aiController: AIController | null = null;
+
+// 挂载到 window 以便调试
+(window as any).aiController = aiController;
 let isAI = false;
 let isPaused = false;
 let waitingForFirstInput = false;
@@ -320,6 +323,14 @@ async function startGame(): Promise<void> {
   
   if (!aiController) {
     aiController = new AIController(gridSize, gridSize);
+    (window as any).aiController = aiController;  // 挂载到 window 以便调试
+  }
+
+  // 根据当前按钮状态设置连接模式
+  if (wsModeBtn.classList.contains('active')) {
+    aiController.setMode('ws');
+  } else {
+    aiController.setMode('http');
   }
 
   if (isAI && aiController) {
