@@ -118,11 +118,16 @@
           <span class="history-dialog-title">🏆 排行榜</span>
           <button class="history-dialog-close" id="history-close">&times;</button>
         </div>
-        <div class="history-name-input">
-          <input type="text" id="history-name" placeholder="输入你的名字" maxlength="10">
+        <!-- Tab 切换 -->
+        <div class="history-tabs">
+          <button class="history-tab active" data-tab="my">📋 我的历史</button>
+          <button class="history-tab" data-tab="leaderboard">🏆 排行榜</button>
         </div>
+        <!-- 我的历史 -->
         <div class="history-list" id="history-list"></div>
-        <button class="history-clear-btn" id="history-clear">清空历史</button>
+        <!-- 排行榜 -->
+        <div class="history-list" id="leaderboard-list" style="display:none"></div>
+        <button class="history-clear-btn" id="history-clear">🗑️ 清空历史</button>
       </div>
     </div>
 

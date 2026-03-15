@@ -317,6 +317,12 @@ function updateUI(): void {
 async function startGame(): Promise<void> {
   const gridSize = parseInt(mapSizeInput.value);
   
+  // 关闭名字输入弹窗（如果打开）
+  const nameDialog = document.getElementById('name-dialog');
+  if (nameDialog) {
+    nameDialog.classList.remove('show');
+  }
+  
   initCanvas();
   
   game = new Game(canvas, gridSize, gridSize);
@@ -924,16 +930,23 @@ function getGameHistory(): HistoryItem[] {
 }
 
 // Fake leaderboard data (will connect to backend later)
-function getLeaderboard(): Array<HistoryItem & { rank: number }> {
+function getLeaderboard(): Array<HistoryItem & { rank: number; name: string; mode: string; date: string }> {
   const fakeData = [
-    { rank: 1, name: '小明', size: 10, score: 97, steps: 500 },
-    { rank: 2, name: '大神', size: 10, score: 95, steps: 480 },
-    { rank: 3, name: '蛇王', size: 10, score: 90, steps: 450 },
-    { rank: 4, name: '高手', size: 10, score: 85, steps: 420 },
-    { rank: 5, name: '玩家1', size: 10, score: 80, steps: 400 },
-    { rank: 6, name: '玩家2', size: 10, score: 75, steps: 380 },
-    { rank: 7, name: '玩家3', size: 10, score: 70, steps: 350 },
-    { rank: 8, name: '玩家4', size: 10, score: 65, steps: 320 },
+    { rank: 1, name: '小明', size: 10, score: 97, steps: 2584, mode: 'AI+WS', date: '2026-03-15' },
+    { rank: 2, name: '大神', size: 10, score: 95, steps: 2450, mode: 'AI+HTTP', date: '2026-03-14' },
+    { rank: 3, name: '蛇王', size: 10, score: 90, steps: 2300, mode: 'AI+WS', date: '2026-03-14' },
+    { rank: 4, name: '高手', size: 10, score: 85, steps: 2100, mode: '人类', date: '2026-03-13' },
+    { rank: 5, name: '玩家1', size: 10, score: 80, steps: 1950, mode: 'AI+HTTP', date: '2026-03-13' },
+    { rank: 6, name: '玩家2', size: 10, score: 75, steps: 1800, mode: 'AI+WS', date: '2026-03-12' },
+    { rank: 7, name: '玩家3', size: 10, score: 70, steps: 1650, mode: '人类', date: '2026-03-12' },
+    { rank: 8, name: '玩家4', size: 10, score: 65, steps: 1500, mode: 'AI+HTTP', date: '2026-03-11' },
+    { rank: 9, name: '新手', size: 5, score: 22, steps: 89, mode: 'AI+WS', date: '2026-03-15' },
+    { rank: 10, name: '练习者', size: 5, score: 20, steps: 85, mode: 'AI+HTTP', date: '2026-03-14' },
+    { rank: 11, name: '学徒', size: 5, score: 18, steps: 78, mode: '人类', date: '2026-03-13' },
+    { rank: 12, name: '挑战者', size: 8, score: 60, steps: 1200, mode: 'AI+WS', date: '2026-03-12' },
+    { rank: 13, name: '探索者', size: 8, score: 55, steps: 1100, mode: 'AI+HTTP', date: '2026-03-11' },
+    { rank: 14, name: '冒险家', size: 8, score: 50, steps: 1000, mode: '人类', date: '2026-03-10' },
+    { rank: 15, name: '追梦人', size: 6, score: 32, steps: 450, mode: 'AI+WS', date: '2026-03-09' },
   ];
   
   // Add current user's score if exists
@@ -963,21 +976,73 @@ function renderHistory(): void {
   if (!historyList) return;
   
   const history = getGameHistory();
+  const currentName = safeLocalStorageGet(NAME_KEY) || '你';
   
   if (history.length === 0) {
-    historyList.innerHTML = '<div class="history-empty">暂无游戏记录</div>';
+    historyList.innerHTML = '<div class="history-empty">📭 暂无游戏记录</div>';
     return;
   }
   
-  historyList.innerHTML = history.map(item => `
-    <div class="history-item">
+  historyList.innerHTML = history.map((item, index) => `
+    <div class="history-item ${index === 0 ? 'latest-game' : ''}">
+      <div class="history-item-rank">${index === 0 ? '🔥' : `#${index + 1}`}</div>
       <div class="history-item-info">
-        <span class="history-item-time">${item.time} · ${item.size}×${item.size}}</span>
-        <span class="history-item-steps">步数: ${item.steps}</span>
+        <span class="history-item-time">🎮 ${item.mode || 'AI'} · ${item.size}×${item.size}</span>
+        <span class="history-item-steps">📅 ${item.time} · 👣 ${item.steps}步</span>
       </div>
       <span class="history-item-score">${item.score}</span>
     </div>
   `).join('');
+}
+
+function renderLeaderboard(): void {
+  const leaderboardList = document.getElementById('leaderboard-list');
+  if (!leaderboardList) return;
+  
+  const leaderboard = getLeaderboard();
+  const currentName = safeLocalStorageGet(NAME_KEY) || '你';
+  
+  leaderboardList.innerHTML = leaderboard.map(item => {
+    const isCurrentUser = item.name === currentName;
+    const rankIcon = item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : `#${item.rank}`;
+    
+    return `
+    <div class="history-item ${isCurrentUser ? 'current-user' : ''}">
+      <div class="history-item-rank">${isCurrentUser ? '👤' : rankIcon}</div>
+      <div class="history-item-info">
+        <span class="history-item-time">${isCurrentUser ? '⭐ ' : ''}${item.name} · 🎮 ${item.mode} · 📐 ${item.size}×${item.size}</span>
+        <span class="history-item-steps">📅 ${item.date} · 👣 ${item.steps}步</span>
+      </div>
+      <span class="history-item-score">${item.score}</span>
+    </div>
+  `}).join('');
+}
+
+// Tab switching
+function initHistoryTabs(): void {
+  const tabs = document.querySelectorAll('.history-tab');
+  const historyList = document.getElementById('history-list');
+  const leaderboardList = document.getElementById('leaderboard-list');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Update active tab
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      // Show/hide content
+      const tabName = tab.getAttribute('data-tab');
+      if (tabName === 'my') {
+        historyList?.style.setProperty('display', 'flex');
+        leaderboardList?.style.setProperty('display', 'none');
+        renderHistory();
+      } else {
+        historyList?.style.setProperty('display', 'none');
+        leaderboardList?.style.setProperty('display', 'flex');
+        renderLeaderboard();
+      }
+    });
+  });
 }
 
 function clearHistory(): void {
@@ -994,6 +1059,8 @@ const historyClear = document.getElementById('history-clear');
 if (historyBtn && historyDialog) {
   historyBtn.addEventListener('click', () => {
     renderHistory();
+    renderLeaderboard();
+    initHistoryTabs();
     // Load saved name
     const nameInput = document.getElementById('history-name') as HTMLInputElement;
     if (nameInput) {
