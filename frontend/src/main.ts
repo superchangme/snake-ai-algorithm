@@ -57,7 +57,7 @@ const speedIncBtn = document.getElementById('speed-inc') as HTMLButtonElement;
 let currentSpeed = 3;
 
 // 速度 +/- 按钮事件
-speedDecBtn.addEventListener('click', () => { this.disabled = true;
+speedDecBtn.addEventListener('click', () => { speedDecBtn.disabled = true;
   if (currentSpeed > 1) {
     currentSpeed--;
     speedDisplay.textContent = String(currentSpeed);
@@ -67,7 +67,7 @@ speedDecBtn.addEventListener('click', () => { this.disabled = true;
   }
 
 });
-speedIncBtn.addEventListener('click', () => { this.disabled = true;
+speedIncBtn.addEventListener('click', () => { speedIncBtn.disabled = true;
   if (currentSpeed < 10) {
     currentSpeed++;
     speedDisplay.textContent = String(currentSpeed);
@@ -564,7 +564,7 @@ settingsToggle.addEventListener('click', () => {
   controlPanel.classList.toggle('expanded');
 });
 
-humanModeBtn.addEventListener('click', () => { this.disabled = true;
+humanModeBtn.addEventListener('click', () => { humanModeBtn.disabled = true;
   isAI = false;
   // 显示速度控制
   const speedGroup = document.querySelector('.speed-group');
@@ -581,7 +581,7 @@ humanModeBtn.addEventListener('click', () => { this.disabled = true;
   resetGame();
 });
 
-httpModeBtn.addEventListener('click', () => { this.disabled = true;
+httpModeBtn.addEventListener('click', () => { httpModeBtn.disabled = true;
   if (aiController) {
     aiController.setMode('http');
   }
@@ -595,7 +595,7 @@ httpModeBtn.addEventListener('click', () => { this.disabled = true;
   resetGame();
 });
 
-wsModeBtn.addEventListener('click', () => { this.disabled = true;
+wsModeBtn.addEventListener('click', () => { wsModeBtn.disabled = true;
   if (aiController) {
     aiController.setMode('ws');
   }
@@ -609,7 +609,7 @@ wsModeBtn.addEventListener('click', () => { this.disabled = true;
   resetGame();
 });
 
-aiModeBtn.addEventListener('click', () => { this.disabled = true;
+aiModeBtn.addEventListener('click', () => { aiModeBtn.disabled = true;
   isAI = true;
   // 隐藏速度控制（使用 class 选择）
   const speedGroup = document.querySelector('.speed-group');
@@ -755,39 +755,21 @@ const initNameInput = () => {
   // Expose for debugging
   (window as any).initNameInput = initNameInput;
   
-  // Make name clickable to edit
+  // Make name clickable to edit - show dialog
   if (summaryName) {
     summaryName.addEventListener('click', () => {
-      if (summaryName.isContentEditable) return;
-      
       const currentName = localStorage.getItem(NAME_KEY) || '';
-      summaryName.textContent = '';
-      summaryName.contentEditable = 'true';
-      summaryName.style.background = 'rgba(0, 255, 136, 0.3)';
-      summaryName.style.padding = '2px 8px';
-      summaryName.focus();
+      const requiredNameInput = document.getElementById('required-name') as HTMLInputElement;
+      const nameConfirm = document.getElementById('name-confirm');
+      const nameDialog = document.getElementById('name-dialog');
       
-      // Select all text
-      document.execCommand('selectAll', false);
-      
-      const saveName = () => {
-        const newName = summaryName.textContent?.replace('👤 ', '').trim() || '';
-        summaryName.contentEditable = 'false';
-        summaryName.style.background = newName ? '' : 'transparent';
-        localStorage.setItem(NAME_KEY, newName);
-        summaryName.textContent = newName ? '👤 ' + newName : '';
-        summaryName.style.display = newName ? 'inline' : 'none';
-        
-        if (nameInput) nameInput.value = newName;
-      };
-      
-      summaryName.addEventListener('blur', saveName);
-      summaryName.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          summaryName.blur();
-        }
-      });
+      if (requiredNameInput) {
+        requiredNameInput.value = currentName;
+      }
+      if (nameDialog) {
+        nameDialog.classList.add('show');
+        requiredNameInput?.focus();
+      }
     });
   }
 };
