@@ -11,7 +11,7 @@ class GameCreate(BaseModel):
     map_size: int = Field(..., ge=5, description="地图尺寸")
     mode: str = Field(..., pattern="^(ai|human)$", description="游戏模式")
     connection: str = Field(..., pattern="^(ws|http)$", description="连接方式")
-    duration_seconds: int = Field(..., ge=0, description="游戏时长（秒）")
+    duration_seconds: float = Field(..., ge=0, description="游戏时长（秒）")
     created_at: Optional[datetime] = None
 
 
@@ -24,7 +24,7 @@ class GameResponse(BaseModel):
     map_size: int
     mode: str
     connection: str
-    duration_seconds: int
+    duration_seconds: float
     created_at: datetime
 
     class Config:

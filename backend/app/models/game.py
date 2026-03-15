@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import BigInteger, Integer, String, CheckConstraint, JSON
+from sqlalchemy import BigInteger, Float, Integer, String, CheckConstraint, JSON, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
@@ -9,18 +9,18 @@ class GameRecord(Base):
     
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     player_name: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    device_id: Mapped[str] = mapped_column(String(64), nullable=False, default="legacy", index=True)
     score: Mapped[int] = mapped_column(Integer, nullable=False)
     steps: Mapped[int] = mapped_column(Integer, nullable=False)
     map_size: Mapped[int] = mapped_column(Integer, nullable=False)
     mode: Mapped[str] = mapped_column(String(10), nullable=False)
     connection: Mapped[str] = mapped_column(String(10), nullable=False)
-    duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
+    duration_seconds: Mapped[float] = mapped_column(Float, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), 
         nullable=False, 
         default=lambda: datetime.now(timezone.utc)
     )
-    # 扩展字段（JSONB，与迁移脚本一致）
-    metadata: Mapped[dict | None] = mapped_column(JSON, default=None)
+    extra_data: Mapped[dict | None] = mapped_column("metadata", JSON, default=None)
     
     __table_args__ = (
         CheckConstraint("score >= 0", name="check_score_positive"),

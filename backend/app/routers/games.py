@@ -30,6 +30,7 @@ async def create_game(
     db_game = GameRecord(**game_data)
     db.add(db_game)
     await db.flush()
+    await db.commit()
     await db.refresh(db_game)
     return db_game
 

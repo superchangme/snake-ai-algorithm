@@ -10,7 +10,7 @@ if settings.ssl_mode != "disable":
     ssl_config = {"ssl": settings.ssl_mode}
 
 engine = create_async_engine(
-    settings.database_url,
+    settings.db_url,
     echo=settings.debug,
     pool_size=10,
     max_overflow=20,
@@ -20,6 +20,7 @@ engine = create_async_engine(
     connect_args={
         "timeout": 10,         # 连接超时
         "command_timeout": 30, # 命令执行超时
+        "server_settings": {"timezone": "UTC"},
         **ssl_config,
     },
 )
