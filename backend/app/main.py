@@ -34,14 +34,30 @@ app.include_router(health_router)
 app.include_router(games_router)
 app.include_router(ai_router)
 
-# WebSocket 独立路由（前端直接连 /ws）
+# WebSocket 独立路由
 app.add_api_websocket_route("/ws", websocket_endpoint)
 
-# 静态文件 + SPA 兜底
-dist_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "dist")
-if os.path.exists(dist_dir):
-    # html=True 会自动处理 SPA 路由
+# 静态文件 - 检查多个可能的位置
+dist_dir = None
+possible_paths = [
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), "dist"),  # backend/dist
+    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "dist"),  # /app/dist
+    os.path.join(os.path.dirname(__file__), "dist"),  # app/dist
+    "dist",  # 当前目录
+    "../dist",  # 上级目录
+]
+
+for path in possible_paths:
+    abs_path = os.path.abspath(path)
+    if os.path.exists(abs_path):
+        dist_dir = abs_path
+        print(f"[INFO] Found static files at: {dist_dir}")
+        break
+
+if dist_dir:
     app.mount("/", StaticFiles(directory=dist_dir, html=True), name="static")
+else:
+    print("[WARNING] No static files found!")
 
 
 if __name__ == "__main__":
