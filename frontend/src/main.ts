@@ -7,6 +7,66 @@ import { Renderer } from './renderer';
 // 常量定义
 const NAME_KEY = 'snake_player_name';
 
+// ========== API Functions ==========
+      // 保存游戏记录到后端
+async function saveGameRecord(score: number, steps: number): Promise<void> {
+  const playerName = safeLocalStorageGet(NAME_KEY) || 'Anonymous';
+  const mapSize = parseInt(mapSizeInput.value);
+  const mode = isAI ? 'ai' : 'human';
+  const connection = wsModeBtn.classList.contains('active') ? 'ws' : 'http';
+  
+  try {
+    await fetch('/api/games', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        player_name: playerName,
+        score: score,
+        steps: steps,
+        map_size: mapSize,
+        mode: mode,
+        connection: connection,
+        duration_seconds: 0
+      })
+    });
+    console.log('Game record saved:', { playerName, score, steps, mapSize, mode, connection });
+  } catch (e) {
+    console.error('Failed to save game record:', e);
+  }
+}
+
+// 获取排行榜
+async function loadLeaderboard(): Promise<Array<HistoryItem & { rank: number; name: string; mode: string; date: string }>> {
+  const mapSize = parseInt(mapSizeInput.value);
+  try {
+    const response = await fetch(`/api/games/leaderboard?map_size=${mapSize}&limit=10`);
+    const data = await response.json();
+    if (data.leaderboard && data.leaderboard.length > 0) {
+      return data.leaderboard;
+    }
+  } catch (e) {
+    console.error('Failed to load leaderboard:', e);
+  }
+  // Fallback to local data
+  return getLeaderboard();
+}
+
+// 获取个人历史
+async function loadHistory(): Promise<HistoryItem[]> {
+  const playerName = safeLocalStorageGet(NAME_KEY) || 'Anonymous';
+  try {
+    const response = await fetch(`/api/games/history?player_name=${encodeURIComponent(playerName)}&limit=20`);
+    const data = await response.json();
+    if (data.history && data.history.length > 0) {
+      return data.history;
+    }
+  } catch (e) {
+    console.error('Failed to load history:', e);
+  }
+  // Fallback to local data
+  return getGameHistory();
+}
+
 // ========== Safe localStorage Wrappers (Fix #3) ==========
 function safeLocalStorageGet(key: string): string | null {
   try {
@@ -503,6 +563,9 @@ async function handleGameOver(): Promise<void> {
       } catch (e) {
         console.error('GameOver API failed:', e);
       }
+
+      // 保存游戏记录到后端
+      saveGameRecord(game.getStats().score, game.getStats().steps);
     }
   } catch (e) {
     console.error('handleGameOver error:', e);
@@ -565,6 +628,9 @@ function handleGameOverHuman(): void {
     const playerName = nameInput?.value?.trim() || '';
     saveGameHistory(stats.score, stats.steps, currentSize, playerName);
   }
+
+  // 保存游戏记录到后端
+  saveGameRecord(stats.score, stats.steps);
 
   startBtn.disabled = false;
   startBtn.textContent = '开始';
@@ -918,6 +984,8 @@ interface HistoryItem {
   size: number;
   score: number;
   steps: number;
+  mode?: string;
+  date?: string;
 }
 
 function saveGameHistory(score: number, steps: number, size: number, name?: string): void {
@@ -982,7 +1050,9 @@ function getLeaderboard(): Array<HistoryItem & { rank: number; name: string; mod
         name: playerName,
         size: best.size,
         score: bestScore,
-        steps: best.steps
+        steps: best.steps,
+        mode: best.mode || '人类',
+        date: new Date().toISOString().split('T')[0]
       });
     }
   }
@@ -992,11 +1062,11 @@ function getLeaderboard(): Array<HistoryItem & { rank: number; name: string; mod
   return fakeData.map((item, index) => ({ ...item, rank: index + 1 }));
 }
 
-function renderHistory(): void {
+async function renderHistory(): Promise<void> {
   const historyList = document.getElementById('history-list');
   if (!historyList) return;
   
-  const history = getGameHistory();
+  const history = await loadHistory();
   const currentName = safeLocalStorageGet(NAME_KEY) || '你';
   
   if (history.length === 0) {
@@ -1016,11 +1086,11 @@ function renderHistory(): void {
   `).join('');
 }
 
-function renderLeaderboard(): void {
+async function renderLeaderboard(): Promise<void> {
   const leaderboardList = document.getElementById('leaderboard-list');
   if (!leaderboardList) return;
   
-  const leaderboard = getLeaderboard();
+  const leaderboard = await loadLeaderboard();
   const currentName = safeLocalStorageGet(NAME_KEY) || '你';
   
   leaderboardList.innerHTML = leaderboard.map(item => {
@@ -1040,13 +1110,13 @@ function renderLeaderboard(): void {
 }
 
 // Tab switching
-function initHistoryTabs(): void {
+async function initHistoryTabs(): Promise<void> {
   const tabs = document.querySelectorAll('.history-tab');
   const historyList = document.getElementById('history-list');
   const leaderboardList = document.getElementById('leaderboard-list');
   
   tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
+    tab.addEventListener('click', async () => {
       // Update active tab
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
@@ -1056,11 +1126,11 @@ function initHistoryTabs(): void {
       if (tabName === 'my') {
         historyList?.style.setProperty('display', 'flex');
         leaderboardList?.style.setProperty('display', 'none');
-        renderHistory();
+        await renderHistory();
       } else {
         historyList?.style.setProperty('display', 'none');
         leaderboardList?.style.setProperty('display', 'flex');
-        renderLeaderboard();
+        await renderLeaderboard();
       }
     });
   });
@@ -1078,10 +1148,10 @@ const historyClose = document.getElementById('history-close');
 const historyClear = document.getElementById('history-clear');
 
 if (historyBtn && historyDialog) {
-  historyBtn.addEventListener('click', () => {
-    renderHistory();
-    renderLeaderboard();
-    initHistoryTabs();
+  historyBtn.addEventListener('click', async () => {
+    await renderHistory();
+    await renderLeaderboard();
+    await initHistoryTabs();
     // Load saved name
     const nameInput = document.getElementById('history-name') as HTMLInputElement;
     if (nameInput) {
