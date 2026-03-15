@@ -173,10 +173,31 @@ const connectionModeGroup = document.getElementById('connection-mode-group');
 const urlParams = new URLSearchParams(window.location.search);
 const modeParam = urlParams.get('mode');
 
+// 如果 URL 带了 mode 参数，自动启用 AI 模式
+if (modeParam === 'ws' || modeParam === 'http') {
+  isAI = true;
+  aiModeBtn.classList.add('active');
+  humanModeBtn.classList.remove('active');
+  if (summaryMode) summaryMode.textContent = 'AI';
+  // 启用连接模式按钮
+  httpModeBtn.disabled = false;
+  wsModeBtn.disabled = false;
+  httpModeBtn.style.opacity = '1';
+  wsModeBtn.style.opacity = '1';
+  // 隐藏速度控制
+  const speedGroup = document.querySelector('.speed-group');
+  if (speedGroup) speedGroup.style.setProperty('display', 'none', 'important');
+  if (summarySpeed) summarySpeed.style.display = 'none';
+}
+
 if (modeParam === 'ws') {
   wsModeBtn.classList.add('active');
   httpModeBtn.classList.remove('active');
+} else if (modeParam === 'http') {
+  httpModeBtn.classList.add('active');
+  wsModeBtn.classList.remove('active');
 } else {
+  // 默认 HTTP
   httpModeBtn.classList.add('active');
   wsModeBtn.classList.remove('active');
 }
