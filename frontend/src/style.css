@@ -1192,3 +1192,54 @@ body.touch-device.ai-mode .dpad-disc {
   font-size: 14px;
   cursor: pointer;
 }
+
+/* 标题行：标题居中 + Tommy 右上角 */
+.title-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.title-row h1 {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.title-row #summary-name {
+  padding: 4px 12px;
+  background: rgba(0, 255, 136, 0.15);
+  border-radius: 12px;
+  color: #00ff88;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* 游戏面板霓虹边框 */
+.game-container {
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.1), inset 0 0 20px rgba(0, 255, 136, 0.05);
+}
+
+/* 状态栏优化 - 突出分数和状态 */
+.info-item.score-item .value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #00ff88;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+.info-item.status-item .value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffd700;
+}
+
+.info-item.secondary .label {
+  font-size: 10px;
+}
+
+.info-item.secondary .value {
+  font-size: 14px;
+  color: #aaa;
+}

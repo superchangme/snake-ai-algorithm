@@ -8,11 +8,11 @@ export class Renderer {
     this.ctx = canvas.getContext('2d')!;
     this.cellSize = 20;
   }
+  
+  private foodPulse = 0;
 
   setCellSize(size: number): void {
     this.cellSize = size;
-    this.canvas.width = this.ctx.canvas.width;
-    this.canvas.height = this.ctx.canvas.height;
   }
 
   render(game: Game): void {
@@ -52,15 +52,25 @@ export class Renderer {
     const y = pos.y * this.cellSize + this.cellSize / 2;
     const radius = this.cellSize * 0.35;
     
-    this.ctx.fillStyle = '#ff6b6b';
+    // Pulse animation
+    this.foodPulse += 0.1;
+    const pulse = Math.sin(this.foodPulse) * 0.2 + 0.8;
+    
+    // Outer glow (pulsing)
+    this.ctx.shadowColor = '#ff3366';
+    this.ctx.shadowBlur = 20 * pulse;
+    
+    // Main food body
+    this.ctx.fillStyle = '#ff3366';
     this.ctx.beginPath();
     this.ctx.arc(x, y, radius, 0, Math.PI * 2);
     this.ctx.fill();
     
-    // Food glow
-    this.ctx.fillStyle = 'rgba(255, 107, 107, 0.3)';
+    // Inner highlight
+    this.ctx.shadowBlur = 0;
+    this.ctx.fillStyle = '#ff6688';
     this.ctx.beginPath();
-    this.ctx.arc(x, y, radius * 1.5, 0, Math.PI * 2);
+    this.ctx.arc(x - radius * 0.3, y - radius * 0.3, radius * 0.3, 0, Math.PI * 2);
     this.ctx.fill();
   }
 
@@ -93,41 +103,84 @@ export class Renderer {
     
     // Draw tail marker
     const tail = body[body.length - 1];
-    this.drawTail(tail);
+    this.drawTail(tail, body.length > 1 ? body[body.length - 2] : undefined);
   }
 
   private drawHead(pos: { x: number; y: number }, direction: { x: number; y: number }): void {
-    const x = pos.x * this.cellSize + this.cellSize / 2;
-    const y = pos.y * this.cellSize + this.cellSize / 2;
-    const size = this.cellSize * 0.35;
+    const cx = pos.x * this.cellSize + this.cellSize / 2;
+    const cy = pos.y * this.cellSize + this.cellSize / 2;
+    const size = this.cellSize * 0.4;
     
+    // Glow effect
+    this.ctx.shadowColor = '#00ff88';
+    this.ctx.shadowBlur = 15;
+    
+    // Head body - rounded rect
     this.ctx.fillStyle = '#00ff88';
-    this.ctx.beginPath();
-    this.ctx.arc(x, y, size, 0, Math.PI * 2);
+    const padding = this.cellSize * 0.1;
+    this.roundRect(cx - size + padding, cy - size + padding, (size - padding) * 2, (size - padding) * 2, 4);
     this.ctx.fill();
+    this.ctx.shadowBlur = 0;
     
-    // Draw arrow showing direction
-    this.ctx.strokeStyle = '#ffffff';
-    this.ctx.lineWidth = 2;
+    // Eyes based on direction
+    this.ctx.fillStyle = '#0a0a0f';
+    const eyeSize = this.cellSize * 0.12;
+    const eyeOffset = this.cellSize * 0.15;
+    
+    if (direction.x !== 0) {
+      // Moving horizontally - eyes on left/right
+      const eyeY = cy - eyeOffset;
+      const eyeY2 = cy + eyeOffset;
+      const eyeX = direction.x > 0 ? cx + size * 0.3 : cx - size * 0.3;
+      this.ctx.beginPath();
+      this.ctx.arc(eyeX, eyeY, eyeSize, 0, Math.PI * 2);
+      this.ctx.arc(eyeX, eyeY2, eyeSize, 0, Math.PI * 2);
+      this.ctx.fill();
+    } else {
+      // Moving vertically - eyes on top/bottom
+      const eyeX = cx - eyeOffset;
+      const eyeX2 = cx + eyeOffset;
+      const eyeY = direction.y > 0 ? cy + size * 0.3 : cy - size * 0.3;
+      this.ctx.beginPath();
+      this.ctx.arc(eyeX, eyeY, eyeSize, 0, Math.PI * 2);
+      this.ctx.arc(eyeX2, eyeY, eyeSize, 0, Math.PI * 2);
+      this.ctx.fill();
+    }
+  }
+  
+  private roundRect(x: number, y: number, w: number, h: number, r: number): void {
     this.ctx.beginPath();
-    
-    const arrowLen = size * 0.8;
-    const ax = x + direction.x * arrowLen;
-    const ay = y + direction.y * arrowLen;
-    
-    this.ctx.moveTo(x, y);
-    this.ctx.lineTo(ax, ay);
-    this.ctx.stroke();
+    this.ctx.moveTo(x + r, y);
+    this.ctx.lineTo(x + w - r, y);
+    this.ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    this.ctx.lineTo(x + w, y + h - r);
+    this.ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    this.ctx.lineTo(x + r, y + h);
+    this.ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    this.ctx.lineTo(x, y + r);
+    this.ctx.quadraticCurveTo(x, y, x + r, y);
+    this.ctx.closePath();
   }
 
-  private drawTail(pos: { x: number; y: number }): void {
-    const x = pos.x * this.cellSize + this.cellSize / 2;
-    const y = pos.y * this.cellSize + this.cellSize / 2;
-    const size = this.cellSize * 0.25;
+  private drawTail(pos: { x: number; y: number }, prevPos?: { x: number; y: number }): void {
+    const cx = pos.x * this.cellSize + this.cellSize / 2;
+    const cy = pos.y * this.cellSize + this.cellSize / 2;
     
-    this.ctx.fillStyle = '#ffcc00';
+    // Tail gradient - smaller and fading
+    const gradient = this.ctx.createRadialGradient(cx, cy, 0, cx, cy, this.cellSize * 0.3);
+    gradient.addColorStop(0, 'rgba(0, 255, 136, 0.8)');
+    gradient.addColorStop(0.5, 'rgba(0, 200, 100, 0.5)');
+    gradient.addColorStop(1, 'rgba(0, 150, 80, 0.2)');
+    
+    this.ctx.fillStyle = gradient;
     this.ctx.beginPath();
-    this.ctx.arc(x, y, size, 0, Math.PI * 2);
+    this.ctx.arc(cx, cy, this.cellSize * 0.3, 0, Math.PI * 2);
+    this.ctx.fill();
+    
+    // Tail tip - small bright dot
+    this.ctx.fillStyle = '#00ff88';
+    this.ctx.beginPath();
+    this.ctx.arc(cx, cy, this.cellSize * 0.12, 0, Math.PI * 2);
     this.ctx.fill();
   }
 }
