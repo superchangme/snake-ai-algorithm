@@ -527,8 +527,8 @@ input[type="range"] {
 
 .dpad-btn {
   position: absolute;
-  width: 36px;
-  height: 36px;
+  width: 50px;
+  height: 50px;
   background: linear-gradient(145deg, #5a5a7a 0%, #3a3a5a 100%);
   border: none;
   border-radius: 50%;
@@ -707,8 +707,8 @@ input[type="range"] {
 }
 
 .action-btn {
-  width: 50px;
-  height: 50px;
+  width: 75px;
+  height: 75px;
   border: none;
   border-radius: 50%;
   font-size: 20px;

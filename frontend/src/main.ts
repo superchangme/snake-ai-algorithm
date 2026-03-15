@@ -1,7 +1,11 @@
+console.log("JS loaded");
 
 import { Game } from './models/Game';
 import { AIController } from './algorithms/AIController';
 import { Renderer } from './renderer';
+
+// 常量定义
+const NAME_KEY = 'snake_player_name';
 
 // Re-enable all setting buttons
 function reenableSettingButtons(): void {
@@ -709,18 +713,18 @@ const initNameInput = () => {
   const nameDialog = document.getElementById('name-dialog');
   
 
-
-  
   if (savedName) {
+    // 有名字 → 显示名字，不弹窗
     if (nameInput) (nameInput as HTMLInputElement).value = savedName;
     if (summaryName) {
       summaryName.textContent = '👤 ' + savedName;
       (summaryName as HTMLElement).style.display = 'inline';
     }
-  } else if (nameDialog) {
-    // No name - show required dialog
-  
-    nameDialog.classList.add('show');
+  } else {
+    // 没名字 → 弹窗让用户输入
+    if (nameDialog) {
+      nameDialog.classList.add('show');
+    }
     
     // Get elements inside dialog
     const requiredNameInput = document.getElementById('required-name');
@@ -728,7 +732,7 @@ const initNameInput = () => {
     
     if (requiredNameInput && nameConfirm) {
       const closeNameDialog = () => {
-        const name = (requiredNameInput as HTMLInputElement).value.trim();
+        const name = ((requiredNameInput as HTMLInputElement).value || "").trim();
       
         if (name) {
           localStorage.setItem(NAME_KEY, name);
@@ -747,6 +751,9 @@ const initNameInput = () => {
       });
     }
   }
+  
+  // Expose for debugging
+  (window as any).initNameInput = initNameInput;
   
   // Make name clickable to edit
   if (summaryName) {
@@ -798,7 +805,6 @@ if (humanModeBtn.classList.contains('active')) {
 
 // ========== History Functions ==========
 const HISTORY_KEY = 'snake_game_history';
-const NAME_KEY = 'snake_player_name';
 
 interface HistoryItem {
   time: string;
