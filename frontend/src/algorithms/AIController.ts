@@ -305,6 +305,26 @@ export class AIController {
       aiStatusEl.textContent = status;
     }
   }
+  // ========== Dispose Method (Fix #2: Cleanup WebSocket/HTTP connections) ==========
+  dispose(): void {
+    console.log('[AI] Disposing AIController...');
+    
+    // Close WebSocket connection
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+    this.wsConnected = false;
+    this.wsInitialized = false;
+    this.wsQueue = [];
+    
+    // Clear pending callbacks
+    this.pendingResolve = null;
+    
+    this.updateAiStatus('已断开');
+    console.log('[AI] AIController disposed');
+  }
+
 
   reset(): void {
     this.cachedDirection = { x: 0, y: 1 };

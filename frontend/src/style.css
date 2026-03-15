@@ -206,7 +206,6 @@ input[type="range"] {
   height: auto;
 }
 
-
 .dpad-btn {
   position: absolute;
   width: 60px;
@@ -258,7 +257,6 @@ input[type="range"] {
   right: 0;
   transform: translateY(-50%);
 }
-
 
 /* Speed Control */
 .speed-group {
@@ -330,7 +328,6 @@ input[type="range"] {
   min-width: 30px;
   text-align: center;
 }
-
 
 /* Mobile */
 @media (max-width: 600px) {
@@ -599,7 +596,6 @@ input[type="range"] {
   transform: translateY(-50%) translateZ(2px) scale(0.95);
 }
 
-
 /* Speed Control */
 .speed-group {
   display: flex !important;
@@ -671,7 +667,6 @@ input[type="range"] {
   text-align: center;
 }
 
-
 /* Mobile */
 @media (max-width: 600px) {
   .gamepad {
@@ -693,9 +688,6 @@ input[type="range"] {
     color: #fff;
   }
   }
-
-
-
 
 /* Gamepad - Final Layout: Start | D-Pad | Reset */
 .gamepad-inner {
@@ -935,7 +927,6 @@ body.touch-device.ai-mode .dpad-disc {
   }
 }
 
-
 /* History Button */
 .history-btn {
   background: rgba(255, 255, 255, 0.1);
@@ -1067,7 +1058,6 @@ body.touch-device.ai-mode .dpad-disc {
 .history-clear-btn:hover {
   background: rgba(255, 100, 100, 0.3);
 }
-
 
 /* Scrollbar styling */
 .history-dialog-content::-webkit-scrollbar {

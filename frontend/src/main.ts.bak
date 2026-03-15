@@ -7,53 +7,8 @@ import { Renderer } from './renderer';
 // 常量定义
 const NAME_KEY = 'snake_player_name';
 
-// ========== Safe localStorage Wrappers (Fix #3) ==========
-function safeLocalStorageGet(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch (e) {
-    console.warn('localStorage.getItem failed:', e);
-    return null;
-  }
-}
-
-function safeLocalStorageSet(key: string, value: string): boolean {
-  try {
-    localStorage.setItem(key, value);
-    return true;
-  } catch (e) {
-    console.warn('localStorage.setItem failed:', e);
-    return false;
-  }
-}
-
-// ========== Game State Enum (Fix #4) ==========
-enum GameState {
-  NotStarted = 'not_started',
-  Running = 'running',
-  Paused = 'paused',
-  Ended = 'ended'
-}
-
-// ========== Debounce Helper (Fix #5) ==========
-function debounce<T extends (...args: unknown[]) => unknown>(
-  fn: T,
-  delayMs: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  return (...args: Parameters<T>) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    timeoutId = setTimeout(() => {
-      fn(...args);
-      timeoutId = null;
-    }, delayMs);
-  };
-}
-
-// Re-enable all setting buttons with debounce
-const reenableSettingButtons = debounce(() => {
+// Re-enable all setting buttons
+function reenableSettingButtons(): void {
   sizeDecBtn.disabled = false;
   sizeIncBtn.disabled = false;
   speedDecBtn.disabled = false;
@@ -62,42 +17,8 @@ const reenableSettingButtons = debounce(() => {
   aiModeBtn.disabled = false;
   httpModeBtn.disabled = false;
   wsModeBtn.disabled = false;
-}, 500);
-
-
-// ========== Event Listener Cleanup (Fix #1) ==========
-// Named event handler references for proper cleanup
-const eventHandlers: {
-  keydown: ((e: KeyboardEvent) => void) | null;
-  dpad: Map<Element, (e: Event) => void>;
-} = {
-  keydown: null,
-  dpad: new Map()
-};
-
-function cleanupEventListeners(): void {
-  // Cleanup keyboard event
-  if (eventHandlers.keydown) {
-    document.removeEventListener('keydown', eventHandlers.keydown);
-    eventHandlers.keydown = null;
-  }
-  
-  // Cleanup D-pad button events
-  eventHandlers.dpad.forEach((handler, element) => {
-    element.removeEventListener('click', handler);
-  });
-  eventHandlers.dpad.clear();
-  
-  // Cleanup AI controller connections (Fix #2)
-  if (aiController) {
-    aiController.dispose();
-  }
-  
-  console.log('[Main] Event listeners cleaned up');
 }
 
-// Page unload cleanup
-window.addEventListener('beforeunload', cleanupEventListeners);
 
 
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
@@ -662,7 +583,6 @@ humanModeBtn.addEventListener('click', () => { humanModeBtn.disabled = true;
 
 httpModeBtn.addEventListener('click', () => { httpModeBtn.disabled = true;
   if (aiController) {
-    aiController.dispose(); // Clean up old connection before switching
     aiController.setMode('http');
   }
 
@@ -677,7 +597,6 @@ httpModeBtn.addEventListener('click', () => { httpModeBtn.disabled = true;
 
 wsModeBtn.addEventListener('click', () => { wsModeBtn.disabled = true;
   if (aiController) {
-    aiController.dispose(); // Clean up old connection before switching
     aiController.setMode('ws');
   }
 
@@ -790,7 +709,7 @@ const initNameInput = () => {
   const nameInput = document.getElementById('history-name');
   const summaryName = document.getElementById('summary-name');
 
-  const savedName = safeLocalStorageGet(NAME_KEY);
+  const savedName = localStorage.getItem(NAME_KEY);
   const nameDialog = document.getElementById('name-dialog');
   
 
@@ -816,7 +735,7 @@ const initNameInput = () => {
         const name = ((requiredNameInput as HTMLInputElement).value || "").trim();
       
         if (name) {
-          safeLocalStorageSet(NAME_KEY, name);
+          localStorage.setItem(NAME_KEY, name);
           if (nameInput) (nameInput as HTMLInputElement).value = name;
           if (summaryName) {
             summaryName.textContent = '👤 ' + name;
@@ -839,7 +758,7 @@ const initNameInput = () => {
   // Make name clickable to edit - show dialog
   if (summaryName) {
     summaryName.addEventListener('click', () => {
-      const currentName = safeLocalStorageGet(NAME_KEY) || '';
+      const currentName = localStorage.getItem(NAME_KEY) || '';
       const requiredNameInput = document.getElementById('required-name') as HTMLInputElement;
       const nameConfirm = document.getElementById('name-confirm');
       const nameDialog = document.getElementById('name-dialog');
@@ -895,12 +814,12 @@ function saveGameHistory(score: number, steps: number, size: number, name?: stri
     history.pop();
   }
   
-  safeLocalStorageSet(HISTORY_KEY, JSON.stringify(history));
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
 }
 
 function getGameHistory(): HistoryItem[] {
   try {
-    const data = safeLocalStorageGet(HISTORY_KEY);
+    const data = localStorage.getItem(HISTORY_KEY);
     return data ? JSON.parse(data) : [];
   } catch {
     return [];
@@ -926,7 +845,7 @@ function getLeaderboard(): Array<HistoryItem & { rank: number }> {
     const bestScore = Math.max(...userHistory.map(h => h.score));
     const best = userHistory.find(h => h.score === bestScore);
     if (best) {
-      const playerName = safeLocalStorageGet(NAME_KEY) || '你';
+      const playerName = localStorage.getItem(NAME_KEY) || '你';
       fakeData.push({
         rank: 0, // Will be calculated
         name: playerName,
@@ -981,7 +900,7 @@ if (historyBtn && historyDialog) {
     // Load saved name
     const nameInput = document.getElementById('history-name') as HTMLInputElement;
     if (nameInput) {
-      nameInput.value = safeLocalStorageGet(NAME_KEY) || '';
+      nameInput.value = localStorage.getItem(NAME_KEY) || '';
     }
     historyDialog.classList.add('show');
   });
@@ -992,7 +911,7 @@ const nameInput = document.getElementById('history-name') as HTMLInputElement;
 if (nameInput) {
   nameInput.addEventListener('change', () => {
     const name = nameInput.value.trim();
-    safeLocalStorageSet(NAME_KEY, name);
+    localStorage.setItem(NAME_KEY, name);
     const summaryName = document.getElementById('summary-name');
     if (summaryName) {
       summaryName.textContent = name ? '👤 ' + name : '';
