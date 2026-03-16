@@ -7,9 +7,9 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8080 ^| findstr LISTENING') 
 timeout /t 1 >nul
 
 REM 启动后端
-cd /d %~dp0
-call venv\Scripts\activate.bat
-start "Snake Backend" cmd /k "python main.py"
+cd /d %~dp0backend
+call ..\venv\Scripts\activate.bat
+start "Snake Backend" cmd /k "python -m uvicorn app.main:app --host 0.0.0.0 --port 8080"
 
 REM 启动前端
 cd /d %~dp0frontend
