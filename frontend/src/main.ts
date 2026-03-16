@@ -433,6 +433,7 @@ async function startGame(): Promise<void> {
     aiController.setMode('http');
   }
 
+  console.log("[DEBUG] Before AI init, isAI:", isAI, "aiController:", !!aiController);
   if (isAI && aiController) {
     try {
       await aiController.init(game.getSnake());
