@@ -1,3 +1,4 @@
+console.log("[MAIN] Script started");
 console.log("JS loaded");
 
 import { Game } from './models/Game';
