@@ -238,6 +238,7 @@ const scoreEl = document.getElementById('score')!;
 const stepsEl = document.getElementById('steps')!;
 const connectionModeGroup = document.getElementById('connection-mode-group');
 
+let isAI = false;
 // 根据 URL 参数初始化连接模式按钮状态
 const urlParams = new URLSearchParams(window.location.search);
 const modeParam = urlParams.get('mode');
@@ -292,7 +293,6 @@ let aiController: AIController | null = null;
 if (import.meta.env.DEV) {
   (window as any).aiController = aiController;
 }
-let isAI = false;
 let isPaused = false;
 let waitingForFirstInput = false;
 let gameRunning = false;
