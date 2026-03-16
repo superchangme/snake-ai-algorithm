@@ -903,18 +903,48 @@ document.querySelectorAll('.dpad-btn').forEach(btn => {
 // Initialize name from localStorage
 const initNameInput = () => {
   const summaryName = document.getElementById('summary-name');
+  const nameDialog = document.getElementById('name-dialog');
+  const requiredNameInput = document.getElementById('required-name') as HTMLInputElement;
+  const nameConfirm = document.getElementById('name-confirm');
+  const savedName = safeLocalStorageGet(NAME_KEY);
   
-  // Expose for debugging
-  (window as any).initNameInput = initNameInput;
+  // 有名字 → 显示名字
+  if (savedName && summaryName) {
+    summaryName.textContent = '👤 ' + savedName;
+    summaryName.style.display = 'inline';
+  }
+  
+  // 没名字 → 弹窗让用户输入
+  if (!savedName && nameDialog) {
+    nameDialog.classList.add('show');
+  }
+  
+  // 绑定确认按钮关闭弹窗
+  const closeNameDialog = () => {
+    const name = (requiredNameInput?.value || "").trim();
+    if (name) {
+      safeLocalStorageSet(NAME_KEY, name);
+      if (summaryName) {
+        summaryName.textContent = '👤 ' + name;
+        summaryName.style.display = 'inline';
+      }
+      nameDialog?.classList.remove('show');
+    }
+  };
+  
+  if (nameConfirm) {
+    nameConfirm.addEventListener('click', closeNameDialog);
+  }
+  if (requiredNameInput) {
+    requiredNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') closeNameDialog();
+    });
+  }
   
   // Make name clickable to edit - show dialog
   if (summaryName) {
     summaryName.addEventListener('click', () => {
       const currentName = safeLocalStorageGet(NAME_KEY) || '';
-      const requiredNameInput = document.getElementById('required-name') as HTMLInputElement;
-      const nameConfirm = document.getElementById('name-confirm');
-      const nameDialog = document.getElementById('name-dialog');
-      
       if (requiredNameInput) {
         requiredNameInput.value = currentName;
       }
