@@ -2,7 +2,8 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   esbuild: {
-    logLevel: 'silent'
+    logLevel: 'silent',
+    drop: []
   },
   build: {
     outDir: '../dist',
