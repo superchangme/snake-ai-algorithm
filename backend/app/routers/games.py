@@ -97,6 +97,7 @@ async def get_leaderboard(
             score=g.score,
             steps=g.steps,
             mode=g.mode,
+            map_size=g.map_size,
             created_at=g.created_at
         )
         for idx, g in enumerate(games)
