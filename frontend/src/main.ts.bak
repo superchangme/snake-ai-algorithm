@@ -7,8 +7,121 @@ import { Renderer } from './renderer';
 // 常量定义
 const NAME_KEY = 'snake_player_name';
 
-// Re-enable all setting buttons
-function reenableSettingButtons(): void {
+// ========== API Functions ==========
+      // 保存游戏记录到后端
+async function saveGameRecord(score: number, steps: number): Promise<void> {
+  const playerName = safeLocalStorageGet(NAME_KEY) || 'Anonymous';
+  const mapSize = parseInt(mapSizeInput.value);
+  const mode = isAI ? 'ai' : 'human';
+  const connection = wsModeBtn.classList.contains('active') ? 'ws' : 'http';
+  
+  try {
+    await fetch('/api/games', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        player_name: playerName,
+        score: score,
+        steps: steps,
+        map_size: mapSize,
+        mode: mode,
+        connection: connection,
+        duration_seconds: 0
+      })
+    });
+    console.log('Game record saved:', { playerName, score, steps, mapSize, mode, connection });
+  } catch (e) {
+    console.error('Failed to save game record:', e);
+  }
+}
+
+// 获取排行榜
+async function loadLeaderboard(): Promise<Array<HistoryItem & { rank: number; name: string; mode: string; date: string }>> {
+  const mapSize = parseInt(mapSizeInput.value);
+  try {
+    const response = await fetch(`/api/games/leaderboard?map_size=${mapSize}&limit=10`);
+    const data = await response.json();
+    if (data.leaderboard && data.leaderboard.length > 0) {
+      return data.leaderboard.map((item: any) => ({
+        rank: item.rank,
+        name: item.player_name,
+        size: item.map_size,
+        score: item.score,
+        steps: item.steps,
+        mode: item.mode,
+        date: item.created_at ? new Date(item.created_at).toLocaleDateString('zh-CN') : '未知'
+      }));
+    }
+  } catch (e) {
+    console.error('Failed to load leaderboard:', e);
+  }
+  // Fallback to local data
+  return getLeaderboard();
+}
+
+// 获取个人历史
+async function loadHistory(): Promise<HistoryItem[]> {
+  const playerName = safeLocalStorageGet(NAME_KEY) || 'Anonymous';
+  try {
+    const response = await fetch(`/api/games/history?player_name=${encodeURIComponent(playerName)}&limit=20`);
+    const data = await response.json();
+    if (data.history && data.history.length > 0) {
+      return data.history;
+    }
+  } catch (e) {
+    console.error('Failed to load history:', e);
+  }
+  // Fallback to local data
+  return getGameHistory();
+}
+
+// ========== Safe localStorage Wrappers (Fix #3) ==========
+function safeLocalStorageGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.warn('localStorage.getItem failed:', e);
+    return null;
+  }
+}
+
+function safeLocalStorageSet(key: string, value: string): boolean {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    console.warn('localStorage.setItem failed:', e);
+    return false;
+  }
+}
+
+// ========== Game State Enum (Fix #4) ==========
+enum GameState {
+  NotStarted = 'not_started',
+  Running = 'running',
+  Paused = 'paused',
+  Ended = 'ended'
+}
+
+// ========== Debounce Helper (Fix #5) ==========
+function debounce<T extends (...args: unknown[]) => unknown>(
+  fn: T,
+  delayMs: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  return (...args: Parameters<T>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      fn(...args);
+      timeoutId = null;
+    }, delayMs);
+  };
+}
+
+// Re-enable all setting buttons with debounce
+const reenableSettingButtons = debounce(() => {
   sizeDecBtn.disabled = false;
   sizeIncBtn.disabled = false;
   speedDecBtn.disabled = false;
@@ -17,8 +130,42 @@ function reenableSettingButtons(): void {
   aiModeBtn.disabled = false;
   httpModeBtn.disabled = false;
   wsModeBtn.disabled = false;
+}, 500);
+
+
+// ========== Event Listener Cleanup (Fix #1) ==========
+// Named event handler references for proper cleanup
+const eventHandlers: {
+  keydown: ((e: KeyboardEvent) => void) | null;
+  dpad: Map<Element, (e: Event) => void>;
+} = {
+  keydown: null,
+  dpad: new Map()
+};
+
+function cleanupEventListeners(): void {
+  // Cleanup keyboard event
+  if (eventHandlers.keydown) {
+    document.removeEventListener('keydown', eventHandlers.keydown);
+    eventHandlers.keydown = null;
+  }
+  
+  // Cleanup D-pad button events
+  eventHandlers.dpad.forEach((handler, element) => {
+    element.removeEventListener('click', handler);
+  });
+  eventHandlers.dpad.clear();
+  
+  // Cleanup AI controller connections (Fix #2)
+  if (aiController) {
+    aiController.dispose();
+  }
+  
+  console.log('[Main] Event listeners cleaned up');
 }
 
+// Page unload cleanup
+window.addEventListener('beforeunload', cleanupEventListeners);
 
 
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
@@ -94,10 +241,31 @@ const connectionModeGroup = document.getElementById('connection-mode-group');
 const urlParams = new URLSearchParams(window.location.search);
 const modeParam = urlParams.get('mode');
 
+// 如果 URL 带了 mode 参数，自动启用 AI 模式
+if (modeParam === 'ws' || modeParam === 'http') {
+  isAI = true;
+  aiModeBtn.classList.add('active');
+  humanModeBtn.classList.remove('active');
+  if (summaryMode) summaryMode.textContent = 'AI';
+  // 启用连接模式按钮
+  httpModeBtn.disabled = false;
+  wsModeBtn.disabled = false;
+  httpModeBtn.style.opacity = '1';
+  wsModeBtn.style.opacity = '1';
+  // 隐藏速度控制
+  const speedGroup = document.querySelector('.speed-group');
+  if (speedGroup) speedGroup.style.setProperty('display', 'none', 'important');
+  if (summarySpeed) summarySpeed.style.display = 'none';
+}
+
 if (modeParam === 'ws') {
   wsModeBtn.classList.add('active');
   httpModeBtn.classList.remove('active');
+} else if (modeParam === 'http') {
+  httpModeBtn.classList.add('active');
+  wsModeBtn.classList.remove('active');
 } else {
+  // 默认 HTTP
   httpModeBtn.classList.add('active');
   wsModeBtn.classList.remove('active');
 }
@@ -118,6 +286,11 @@ const aiStatusEl = document.getElementById('ai-status')!;
 
 let game: Game;
 let aiController: AIController | null = null;
+
+// 开发环境挂载到 window 以便调试
+if (import.meta.env.DEV) {
+  (window as any).aiController = aiController;
+}
 let isAI = false;
 let isPaused = false;
 let waitingForFirstInput = false;
@@ -233,6 +406,12 @@ function updateUI(): void {
 async function startGame(): Promise<void> {
   const gridSize = parseInt(mapSizeInput.value);
   
+  // 关闭名字输入弹窗（如果打开）
+  const nameDialog = document.getElementById('name-dialog');
+  if (nameDialog) {
+    nameDialog.classList.remove('show');
+  }
+  
   initCanvas();
   
   game = new Game(canvas, gridSize, gridSize);
@@ -241,6 +420,17 @@ async function startGame(): Promise<void> {
   
   if (!aiController) {
     aiController = new AIController(gridSize, gridSize);
+    // 开发环境挂载到 window 以便调试
+    if (import.meta.env.DEV) {
+      (window as any).aiController = aiController;
+    }
+  }
+
+  // 根据当前按钮状态设置连接模式
+  if (wsModeBtn.classList.contains('active')) {
+    aiController.setMode('ws');
+  } else {
+    aiController.setMode('http');
   }
 
   if (isAI && aiController) {
@@ -381,6 +571,9 @@ async function handleGameOver(): Promise<void> {
       } catch (e) {
         console.error('GameOver API failed:', e);
       }
+
+      // 保存游戏记录到后端
+      saveGameRecord(game.getStats().score, game.getStats().steps);
     }
   } catch (e) {
     console.error('handleGameOver error:', e);
@@ -443,6 +636,9 @@ function handleGameOverHuman(): void {
     const playerName = nameInput?.value?.trim() || '';
     saveGameHistory(stats.score, stats.steps, currentSize, playerName);
   }
+
+  // 保存游戏记录到后端
+  saveGameRecord(stats.score, stats.steps);
 
   startBtn.disabled = false;
   startBtn.textContent = '开始';
@@ -583,6 +779,7 @@ humanModeBtn.addEventListener('click', () => { humanModeBtn.disabled = true;
 
 httpModeBtn.addEventListener('click', () => { httpModeBtn.disabled = true;
   if (aiController) {
+    aiController.dispose(); // Clean up old connection before switching
     aiController.setMode('http');
   }
 
@@ -597,6 +794,7 @@ httpModeBtn.addEventListener('click', () => { httpModeBtn.disabled = true;
 
 wsModeBtn.addEventListener('click', () => { wsModeBtn.disabled = true;
   if (aiController) {
+    aiController.dispose(); // Clean up old connection before switching
     aiController.setMode('ws');
   }
 
@@ -709,7 +907,7 @@ const initNameInput = () => {
   const nameInput = document.getElementById('history-name');
   const summaryName = document.getElementById('summary-name');
 
-  const savedName = localStorage.getItem(NAME_KEY);
+  const savedName = safeLocalStorageGet(NAME_KEY);
   const nameDialog = document.getElementById('name-dialog');
   
 
@@ -735,7 +933,7 @@ const initNameInput = () => {
         const name = ((requiredNameInput as HTMLInputElement).value || "").trim();
       
         if (name) {
-          localStorage.setItem(NAME_KEY, name);
+          safeLocalStorageSet(NAME_KEY, name);
           if (nameInput) (nameInput as HTMLInputElement).value = name;
           if (summaryName) {
             summaryName.textContent = '👤 ' + name;
@@ -758,7 +956,7 @@ const initNameInput = () => {
   // Make name clickable to edit - show dialog
   if (summaryName) {
     summaryName.addEventListener('click', () => {
-      const currentName = localStorage.getItem(NAME_KEY) || '';
+      const currentName = safeLocalStorageGet(NAME_KEY) || '';
       const requiredNameInput = document.getElementById('required-name') as HTMLInputElement;
       const nameConfirm = document.getElementById('name-confirm');
       const nameDialog = document.getElementById('name-dialog');
@@ -794,6 +992,8 @@ interface HistoryItem {
   size: number;
   score: number;
   steps: number;
+  mode?: string;
+  date?: string;
 }
 
 function saveGameHistory(score: number, steps: number, size: number, name?: string): void {
@@ -814,12 +1014,12 @@ function saveGameHistory(score: number, steps: number, size: number, name?: stri
     history.pop();
   }
   
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  safeLocalStorageSet(HISTORY_KEY, JSON.stringify(history));
 }
 
 function getGameHistory(): HistoryItem[] {
   try {
-    const data = localStorage.getItem(HISTORY_KEY);
+    const data = safeLocalStorageGet(HISTORY_KEY);
     return data ? JSON.parse(data) : [];
   } catch {
     return [];
@@ -827,16 +1027,23 @@ function getGameHistory(): HistoryItem[] {
 }
 
 // Fake leaderboard data (will connect to backend later)
-function getLeaderboard(): Array<HistoryItem & { rank: number }> {
+function getLeaderboard(): Array<HistoryItem & { rank: number; name: string; mode: string; date: string }> {
   const fakeData = [
-    { rank: 1, name: '小明', size: 10, score: 97, steps: 500 },
-    { rank: 2, name: '大神', size: 10, score: 95, steps: 480 },
-    { rank: 3, name: '蛇王', size: 10, score: 90, steps: 450 },
-    { rank: 4, name: '高手', size: 10, score: 85, steps: 420 },
-    { rank: 5, name: '玩家1', size: 10, score: 80, steps: 400 },
-    { rank: 6, name: '玩家2', size: 10, score: 75, steps: 380 },
-    { rank: 7, name: '玩家3', size: 10, score: 70, steps: 350 },
-    { rank: 8, name: '玩家4', size: 10, score: 65, steps: 320 },
+    { rank: 1, name: '小明', size: 10, score: 97, steps: 2584, mode: 'AI+WS', date: '2026-03-15' },
+    { rank: 2, name: '大神', size: 10, score: 95, steps: 2450, mode: 'AI+HTTP', date: '2026-03-14' },
+    { rank: 3, name: '蛇王', size: 10, score: 90, steps: 2300, mode: 'AI+WS', date: '2026-03-14' },
+    { rank: 4, name: '高手', size: 10, score: 85, steps: 2100, mode: '人类', date: '2026-03-13' },
+    { rank: 5, name: '玩家1', size: 10, score: 80, steps: 1950, mode: 'AI+HTTP', date: '2026-03-13' },
+    { rank: 6, name: '玩家2', size: 10, score: 75, steps: 1800, mode: 'AI+WS', date: '2026-03-12' },
+    { rank: 7, name: '玩家3', size: 10, score: 70, steps: 1650, mode: '人类', date: '2026-03-12' },
+    { rank: 8, name: '玩家4', size: 10, score: 65, steps: 1500, mode: 'AI+HTTP', date: '2026-03-11' },
+    { rank: 9, name: '新手', size: 5, score: 22, steps: 89, mode: 'AI+WS', date: '2026-03-15' },
+    { rank: 10, name: '练习者', size: 5, score: 20, steps: 85, mode: 'AI+HTTP', date: '2026-03-14' },
+    { rank: 11, name: '学徒', size: 5, score: 18, steps: 78, mode: '人类', date: '2026-03-13' },
+    { rank: 12, name: '挑战者', size: 8, score: 60, steps: 1200, mode: 'AI+WS', date: '2026-03-12' },
+    { rank: 13, name: '探索者', size: 8, score: 55, steps: 1100, mode: 'AI+HTTP', date: '2026-03-11' },
+    { rank: 14, name: '冒险家', size: 8, score: 50, steps: 1000, mode: '人类', date: '2026-03-10' },
+    { rank: 15, name: '追梦人', size: 6, score: 32, steps: 450, mode: 'AI+WS', date: '2026-03-09' },
   ];
   
   // Add current user's score if exists
@@ -845,13 +1052,15 @@ function getLeaderboard(): Array<HistoryItem & { rank: number }> {
     const bestScore = Math.max(...userHistory.map(h => h.score));
     const best = userHistory.find(h => h.score === bestScore);
     if (best) {
-      const playerName = localStorage.getItem(NAME_KEY) || '你';
+      const playerName = safeLocalStorageGet(NAME_KEY) || '你';
       fakeData.push({
         rank: 0, // Will be calculated
         name: playerName,
         size: best.size,
         score: bestScore,
-        steps: best.steps
+        steps: best.steps,
+        mode: best.mode || '人类',
+        date: new Date().toISOString().split('T')[0]
       });
     }
   }
@@ -861,26 +1070,78 @@ function getLeaderboard(): Array<HistoryItem & { rank: number }> {
   return fakeData.map((item, index) => ({ ...item, rank: index + 1 }));
 }
 
-function renderHistory(): void {
+async function renderHistory(): Promise<void> {
   const historyList = document.getElementById('history-list');
   if (!historyList) return;
   
-  const history = getGameHistory();
+  const history = await loadHistory();
+  const currentName = safeLocalStorageGet(NAME_KEY) || '你';
   
   if (history.length === 0) {
-    historyList.innerHTML = '<div class="history-empty">暂无游戏记录</div>';
+    historyList.innerHTML = '<div class="history-empty">📭 暂无游戏记录</div>';
     return;
   }
   
-  historyList.innerHTML = history.map(item => `
-    <div class="history-item">
+  historyList.innerHTML = history.map((item, index) => `
+    <div class="history-item ${index === 0 ? 'latest-game' : ''}">
+      <div class="history-item-rank">${index === 0 ? '🔥' : `#${index + 1}`}</div>
       <div class="history-item-info">
-        <span class="history-item-time">${item.time} · ${item.size}×${item.size}}</span>
-        <span class="history-item-steps">步数: ${item.steps}</span>
+        <span class="history-item-time">🎮 ${item.mode || 'AI'} · ${item.size}×${item.size}</span>
+        <span class="history-item-steps">📅 ${item.time} · 👣 ${item.steps}步</span>
       </div>
       <span class="history-item-score">${item.score}</span>
     </div>
   `).join('');
+}
+
+async function renderLeaderboard(): Promise<void> {
+  const leaderboardList = document.getElementById('leaderboard-list');
+  if (!leaderboardList) return;
+  
+  const leaderboard = await loadLeaderboard();
+  const currentName = safeLocalStorageGet(NAME_KEY) || '你';
+  
+  leaderboardList.innerHTML = leaderboard.map(item => {
+    const isCurrentUser = item.name === currentName;
+    const rankIcon = item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : `#${item.rank}`;
+    
+    return `
+    <div class="history-item ${isCurrentUser ? 'current-user' : ''}">
+      <div class="history-item-rank">${isCurrentUser ? '👤' : rankIcon}</div>
+      <div class="history-item-info">
+        <span class="history-item-time">${isCurrentUser ? '⭐ ' : ''}${item.name} · 🎮 ${item.mode} · 📐 ${item.size}×${item.size}</span>
+        <span class="history-item-steps">📅 ${item.date} · 👣 ${item.steps}步</span>
+      </div>
+      <span class="history-item-score">${item.score}</span>
+    </div>
+  `}).join('');
+}
+
+// Tab switching
+async function initHistoryTabs(): Promise<void> {
+  const tabs = document.querySelectorAll('.history-tab');
+  const historyList = document.getElementById('history-list');
+  const leaderboardList = document.getElementById('leaderboard-list');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', async () => {
+      // Update active tab
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      // Show/hide content
+      const tabName = tab.getAttribute('data-tab');
+      if (tabName === 'my') {
+        historyList?.style.setProperty('display', 'flex');
+        leaderboardList?.style.setProperty('display', 'none');
+        await renderHistory();
+      } else {
+        historyList?.style.setProperty('display', 'none');
+        leaderboardList?.style.setProperty('display', 'flex');
+        await renderLeaderboard();
+      }
+    });
+  });
 }
 
 function clearHistory(): void {
@@ -895,12 +1156,14 @@ const historyClose = document.getElementById('history-close');
 const historyClear = document.getElementById('history-clear');
 
 if (historyBtn && historyDialog) {
-  historyBtn.addEventListener('click', () => {
-    renderHistory();
+  historyBtn.addEventListener('click', async () => {
+    await renderHistory();
+    await renderLeaderboard();
+    await initHistoryTabs();
     // Load saved name
     const nameInput = document.getElementById('history-name') as HTMLInputElement;
     if (nameInput) {
-      nameInput.value = localStorage.getItem(NAME_KEY) || '';
+      nameInput.value = safeLocalStorageGet(NAME_KEY) || '';
     }
     historyDialog.classList.add('show');
   });
@@ -911,7 +1174,7 @@ const nameInput = document.getElementById('history-name') as HTMLInputElement;
 if (nameInput) {
   nameInput.addEventListener('change', () => {
     const name = nameInput.value.trim();
-    localStorage.setItem(NAME_KEY, name);
+    safeLocalStorageSet(NAME_KEY, name);
     const summaryName = document.getElementById('summary-name');
     if (summaryName) {
       summaryName.textContent = name ? '👤 ' + name : '';

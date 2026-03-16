@@ -42,7 +42,15 @@ async function loadLeaderboard(): Promise<Array<HistoryItem & { rank: number; na
     const response = await fetch(`/api/games/leaderboard?map_size=${mapSize}&limit=10`);
     const data = await response.json();
     if (data.leaderboard && data.leaderboard.length > 0) {
-      return data.leaderboard;
+      return data.leaderboard.map((item: any) => ({
+        rank: item.rank,
+        name: item.player_name,
+        size: item.map_size,
+        score: item.score,
+        steps: item.steps,
+        mode: item.mode,
+        date: item.created_at ? new Date(item.created_at).toLocaleDateString('zh-CN') : '未知'
+      }));
     }
   } catch (e) {
     console.error('Failed to load leaderboard:', e);
@@ -896,51 +904,6 @@ document.querySelectorAll('.dpad-btn').forEach(btn => {
 const initNameInput = () => {
   
 
-  const nameInput = document.getElementById('history-name');
-  const summaryName = document.getElementById('summary-name');
-
-  const savedName = safeLocalStorageGet(NAME_KEY);
-  const nameDialog = document.getElementById('name-dialog');
-  
-
-  if (savedName) {
-    // 有名字 → 显示名字，不弹窗
-    if (nameInput) (nameInput as HTMLInputElement).value = savedName;
-    if (summaryName) {
-      summaryName.textContent = '👤 ' + savedName;
-      (summaryName as HTMLElement).style.display = 'inline';
-    }
-  } else {
-    // 没名字 → 弹窗让用户输入
-    if (nameDialog) {
-      nameDialog.classList.add('show');
-    }
-    
-    // Get elements inside dialog
-    const requiredNameInput = document.getElementById('required-name');
-    const nameConfirm = document.getElementById('name-confirm');
-    
-    if (requiredNameInput && nameConfirm) {
-      const closeNameDialog = () => {
-        const name = ((requiredNameInput as HTMLInputElement).value || "").trim();
-      
-        if (name) {
-          safeLocalStorageSet(NAME_KEY, name);
-          if (nameInput) (nameInput as HTMLInputElement).value = name;
-          if (summaryName) {
-            summaryName.textContent = '👤 ' + name;
-            (summaryName as HTMLElement).style.display = 'inline';
-          }
-          nameDialog.classList.remove('show');
-        }
-      };
-      
-      nameConfirm.addEventListener('click', closeNameDialog);
-      requiredNameInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') closeNameDialog();
-      });
-    }
-  }
   
   // Expose for debugging
   (window as any).initNameInput = initNameInput;
