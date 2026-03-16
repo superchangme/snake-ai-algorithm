@@ -485,11 +485,21 @@ async function gameLoopAI(currentLoopId: number): Promise<void> {
     let direction = { x: 0, y: -1 };
     if (aiController) {
       try {
+        // 显示思考中状态
+        aiStatusEl.textContent = '🤔 决策中...';
+        aiStatusEl.classList.add('thinking');
+        aiStatusEl.classList.remove('completed');
+
         direction = await aiController.getNextDirection(
           game.getSnake(),
           game.getFood(),
           game.getGridSize().width, game.getGridSize().height
         );
+
+        // 显示决策完成状态
+        aiStatusEl.textContent = '✅ 决策已完成';
+        aiStatusEl.classList.remove('thinking');
+        aiStatusEl.classList.add('completed');
         
         // 高亮AI当前方向对应的按钮
         const dirBtnMap: Record<string, string> = {
@@ -517,7 +527,9 @@ async function gameLoopAI(currentLoopId: number): Promise<void> {
       '0,-1': '上', '0,1': '下', '-1,0': '左', '1,0': '右'
     };
     const dirKey = direction.x + ',' + direction.y;
-    aiStatusEl.textContent = dirNames[dirKey] || dirKey;
+    // 保持"决策已完成"状态，同时显示方向
+    const dirNameFinal = dirNames[dirKey] || dirKey;
+    aiStatusEl.innerHTML = '✅ ' + dirNameFinal;
     
     game.update();
     updateUI();
@@ -717,6 +729,7 @@ function resetGame(): void {
   scoreEl.textContent = '0';
   stepsEl.textContent = '0';
   aiStatusEl.textContent = '-';
+  aiStatusEl.classList.remove('thinking', 'completed');
   
   pauseBtn.textContent = '暂停';
   pauseBtn.disabled = true;

@@ -1323,3 +1323,40 @@ body.touch-device.ai-mode .dpad-disc {
   font-size: 14px;
   color: #aaa;
 }
+
+/* AI 状态动画效果 */
+#ai-status {
+  transition: all 0.3s ease;
+}
+
+#ai-status.thinking {
+  color: #00bfff;
+  animation: status-pulse 1s ease-in-out infinite;
+}
+
+#ai-status.completed {
+  color: #00ff88;
+  animation: status-slide-up 0.5s ease-out;
+}
+
+@keyframes status-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes status-slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
