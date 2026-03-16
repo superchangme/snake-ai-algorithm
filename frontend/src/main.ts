@@ -238,6 +238,10 @@ const scoreEl = document.getElementById('score')!;
 const stepsEl = document.getElementById('steps')!;
 const connectionModeGroup = document.getElementById('connection-mode-group');
 
+const summaryMode = document.getElementById('summary-mode');
+const summarySpeed = document.getElementById('summary-speed');
+const summaryDir = document.getElementById('summary-dir');
+
 let isAI = false;
 // 根据 URL 参数初始化连接模式按钮状态
 const urlParams = new URLSearchParams(window.location.search);
@@ -273,9 +277,6 @@ if (modeParam === 'ws') {
 }
 
 // 更新顶部显示
-const summaryMode = document.getElementById('summary-mode') as HTMLSpanElement;
-const summarySpeed = document.getElementById('summary-speed') as HTMLSpanElement;
-const summaryDir = document.getElementById('summary-dir') as HTMLSpanElement;
 if (summaryMode) {
   summaryMode.textContent = '人类';
 }
@@ -366,7 +367,6 @@ function initFromURL(): void {
     isAI = true;
     aiModeBtn.classList.add('active');
     humanModeBtn.classList.remove('active');
-    const summaryMode = document.getElementById('summary-mode');
     if (summaryMode) summaryMode.textContent = 'AI';
     // 启用连接模式
     httpModeBtn.disabled = false;
@@ -376,7 +376,6 @@ function initFromURL(): void {
     // 隐藏速度控制
     const speedGroup = document.querySelector('.speed-group');
     if (speedGroup) speedGroup.style.setProperty('display', 'none', 'important');
-    const summarySpeed = document.getElementById('summary-speed');
     if (summarySpeed) summarySpeed.style.display = 'none';
   }
 
