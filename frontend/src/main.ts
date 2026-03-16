@@ -759,7 +759,6 @@ speedInput.addEventListener('input', () => {
 });
 
 startBtn.addEventListener('click', async () => {
-  console.error('[START_BTN] Clicked!');
   startBtn.disabled = true;
   pauseBtn.disabled = false;
   setControlsEnabled(false);
