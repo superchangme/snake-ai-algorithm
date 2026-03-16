@@ -377,6 +377,10 @@ function initFromURL(): void {
     const speedGroup = document.querySelector('.speed-group');
     if (speedGroup) speedGroup.style.setProperty('display', 'none', 'important');
     if (summarySpeed) summarySpeed.style.display = 'none';
+    // 设置 AI 控制器模式
+    if (aiController) {
+      wsModeBtn.classList.contains('active') ? aiController.setMode('ws') : aiController.setMode('http');
+    }
   }
 
   
