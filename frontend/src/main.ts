@@ -902,8 +902,7 @@ document.querySelectorAll('.dpad-btn').forEach(btn => {
 
 // Initialize name from localStorage
 const initNameInput = () => {
-  
-
+  const summaryName = document.getElementById('summary-name');
   
   // Expose for debugging
   (window as any).initNameInput = initNameInput;
