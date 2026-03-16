@@ -23,6 +23,7 @@ class GameResponse(BaseModel):
     steps: int
     map_size: int
     mode: str
+    map_size: int
     connection: str
     duration_seconds: float
     created_at: datetime
@@ -47,6 +48,7 @@ class LeaderboardEntry(BaseModel):
     score: int
     steps: int
     mode: str
+    map_size: int
     created_at: datetime
 
 
@@ -54,5 +56,6 @@ class LeaderboardResponse(BaseModel):
     """排行榜响应模型"""
     map_size: int
     mode: str
+    map_size: int
     limit: int
     leaderboard: List[LeaderboardEntry]
