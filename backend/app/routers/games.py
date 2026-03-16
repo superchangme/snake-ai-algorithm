@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -108,3 +108,15 @@ async def get_leaderboard(
         limit=limit,
         leaderboard=leaderboard
     )
+
+
+@router.delete("", status_code=204)
+async def delete_player_records(
+    player_name: str = Query(..., min_length=1, max_length=64),
+    db: AsyncSession = Depends(get_db)
+):
+    """删除玩家所有记录"""
+    stmt = delete(GameRecord).where(GameRecord.player_name == player_name)
+    await db.execute(stmt)
+    await db.commit()
+    return None

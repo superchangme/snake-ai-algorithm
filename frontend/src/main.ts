@@ -1153,9 +1153,18 @@ if (historyDialog) {
 }
 
 if (historyClear) {
-  historyClear.addEventListener('click', () => {
+  historyClear.addEventListener('click', async () => {
     if (confirm('确定要清空所有游戏记录吗？')) {
+      const playerName = safeLocalStorageGet(NAME_KEY) || 'Anonymous';
+      try {
+        await fetch(`/api/games?player_name=${encodeURIComponent(playerName)}`, {
+          method: 'DELETE'
+        });
+      } catch (e) {
+        console.error('Failed to delete server records:', e);
+      }
       clearHistory();
+      await renderLeaderboard();
     }
   });
 }
