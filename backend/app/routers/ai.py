@@ -154,26 +154,31 @@ async def websocket_endpoint(websocket: WebSocket):
             message = await websocket.receive_text()
             import json
             data = json.loads(message)
-            action = data.get("action")
+            # 支持 type 或 action
+            action = data.get("action") or data.get("type")
             
             if action == "init":
-                size = data.get("size", 8)
-                head_x = data.get("headX", size // 2)
-                head_y = data.get("headY", size // 2)
-                body = data.get("body", [])
+                # 支持 width/height 或 size
+                size = data.get("size") or data.get("width", 8)
+                height = data.get("height", size)
+                
+                # 支持 snake 数组或 body 数组
+                snake_data = data.get("snake", []) or data.get("body", [])
                 
                 cache_key = f"ai_{size}"
                 if cache_key not in ai_cache:
                     ai_cache[cache_key] = TweakAI(size, size)
                 
                 ai_instance = ai_cache[cache_key]
-                snake = [(head_x, head_y)]
-                for p in body:
+                snake = []
+                for p in snake_data:
                     if isinstance(p, dict):
                         snake.append((p.get("x", 0), p.get("y", 0)))
                     elif isinstance(p, (list, tuple)) and len(p) >= 2:
                         snake.append((p[0], p[1]))
-                ai_instance.reset_game(snake)
+                
+                if snake:
+                    ai_instance.reset_game(snake)
                 
                 await websocket.send_json({
                     "status": "initialized",
@@ -181,15 +186,23 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
             
             elif action == "move":
-                head_x = data.get("headX", 0)
-                head_y = data.get("headY", 0)
-                body = data.get("body", [])
-                food_x = data.get("foodX", 0)
-                food_y = data.get("foodY", 0)
-                size = data.get("size", 8)
+                # 支持 snake 数组或 body 数组
+                snake_data = data.get("snake", []) or data.get("body", [])
                 
-                snake = [(head_x, head_y)]
-                for p in body:
+                # 支持 food.x/food.y 或 foodX/foodY
+                food_data = data.get("food", {})
+                if isinstance(food_data, dict):
+                    food_x = food_data.get("x", 0)
+                    food_y = food_data.get("y", 0)
+                else:
+                    food_x = data.get("foodX", 0)
+                    food_y = data.get("foodY", 0)
+                
+                # 支持 width/height 或 size
+                size = data.get("size") or data.get("width", 8)
+                
+                snake = []
+                for p in snake_data:
                     if isinstance(p, dict):
                         snake.append((p.get("x", 0), p.get("y", 0)))
                     elif isinstance(p, (list, tuple)) and len(p) >= 2:
